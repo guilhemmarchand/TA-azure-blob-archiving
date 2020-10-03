@@ -34,6 +34,10 @@ Use the Splunk Add-on for Microsoft Cloud Services to monitor and index automati
 
 This application provides a dashboard and logic based on a KVstore collection that is automatically feed by the records indexed, which allows you to the power of Splunk language to review buckets that were achived, search for any information based on the rich information stored in the Azure table, or provide analytic reporting.
 
+![screenshot1](./docs/img/az_screen.png)
+
+![screenshot2](./docs/img/az_screen2.png)
+
 ## Dependencies
 
 Every indexer needs to have a Python 3 interpreter available, and as well the following Azure SDK Python installed:
