@@ -40,6 +40,9 @@ Every indexer needs to have a Python 3 interpreter available, and as well the fo
 
 ``
 pip install azure-storage-blob
+``
+
+``
 pip install azure-cosmosdb-table
 ``
 
