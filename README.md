@@ -50,9 +50,10 @@ pip install azure-storage-blob
 pip install azure-cosmosdb-table
 ``
 
-See:
-https://pypi.org/project/azure-storage-blob/
-https://pypi.org/project/azure-cosmosdb-table/
+*See:*
+
+- https://pypi.org/project/azure-storage-blob/
+- https://pypi.org/project/azure-cosmosdb-table/
 
 These dependencies should be installed in the name space of the Splunk user owning the Splunk processes (splunk usually on Linux) which pip allows you to, which in turn allows Splunk to use the OS level Python interpreter (/usr/bin/python) and benefit from the Python SDK librairies for Azure.
 
