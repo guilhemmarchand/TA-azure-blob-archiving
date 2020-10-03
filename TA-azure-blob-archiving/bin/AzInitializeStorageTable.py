@@ -4,7 +4,7 @@
 # - Use this Python script to create the Azure table to be used to store bucket archiving information
 # - To run:
 # export SPLUNK_HOME="/opt/splunk"
-# python3 /opt/splunk/etc/apps/TA-azure-blob-cold2frozen/bin/AzCreateTable.py
+# python3 /opt/splunk/etc/apps/TA-azure-blob-archiving/bin/AzCreateTable.py
 
 import sys, os, gzip, shutil, subprocess, random, re, platform, time
 import configparser
@@ -29,7 +29,7 @@ is_windows = re.match(r'^win\w+', (platform.system().lower()))
 
 # Discover app path
 # app name
-appname = "TA-azure-blob-cold2frozen"
+appname = "TA-azure-blob-archiving"
 
 if is_windows:
     TA_APP = SPLUNK_HOME + '\\etc\\apps\\' + appname
@@ -50,7 +50,7 @@ if os.path.exists(TA_APP):
 elif os.path.exists(TA_APP_CLUSTERED):
     APP = TA_APP_CLUSTERED
 else:
-    msg = 'The Application root directory could not be found, is the TA-azure-blob-cold2frozen installed ? We tried: ' + \
+    msg = 'The Application root directory could not be found, is the TA-azure-blob-archiving installed ? We tried: ' + \
           str(TA_APP) + ' ' + str(TA_APP_CLUSTERED)
     print(msg)
     sys.exit(1)

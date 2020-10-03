@@ -45,7 +45,7 @@ is_windows = re.match(r'^win\w+', (platform.system().lower()))
 
 # Discover app path
 # app name
-appname = "TA-azure-blob-cold2frozen"
+appname = "TA-azure-blob-archiving"
 
 if is_windows:
     TA_APP = SPLUNK_HOME + '\\etc\\apps\\' + appname
@@ -154,7 +154,7 @@ if container_was_created:
 table_service = TableService(connection_string=AZ_BLOB_CONNECTION_STRING)
 
 # Silently create the AZ storage table if does not exist yet
-with contextlib.redirect_stdout(None):
+with contextlib.redirect_stderr(None):
     table_service.create_table(AZ_STORAGE_TABLE_NAME)
 
 
@@ -313,9 +313,10 @@ if __name__ == "__main__":
     record_status = None
 
     try:
-        record = table_service.get_entity(AZ_STORAGE_TABLE_NAME, AZ_BLOB_CONTAINER, bucket_id, select='status', timeout=60)
-        record_status = record.status
-        record_found = True
+        with contextlib.redirect_stderr(None):
+            record = table_service.get_entity(AZ_STORAGE_TABLE_NAME, AZ_BLOB_CONTAINER, bucket_id, select='status', timeout=60)
+            record_status = record.status
+            record_found = True
     except:
         record_found = False
 
