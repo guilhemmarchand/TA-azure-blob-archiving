@@ -52,7 +52,7 @@ Azure SDK for Python
     pip3 install azure-storage-blob
     pip3 install azure-cosmosdb-table
 
-Dependening on the context, you may prefer to run the pip module installation only for the user that owns the Splunk processes:
+Depending on the context, you may prefer to run the pip module installation only for the user that owns the Splunk processes:
 
 ::
 
