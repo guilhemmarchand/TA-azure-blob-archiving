@@ -48,9 +48,9 @@ Azure SDK for Python
 **You can install the SDKs via pip:**
 
 ::
-
-    pip install azure-storage-blob
-    pip install azure-cosmosdb-table
+    sudo su - splunk
+    pip3 install azure-storage-blob
+    pip3 install azure-cosmosdb-table
 
 **Once you installed the Azure SDKs, you can very easily verify that the modules can be imported successfully:**
 
