@@ -274,8 +274,8 @@ if __name__ == "__main__":
     # Get bucket UTC epoch start and UTC epoch end
     buckets_info = bucket_name.split('_')
     bucket_epoch_start, bucket_epoch_end = "null", "null"
-    bucket_epoch_start = buckets_info[1]
-    bucket_epoch_end = buckets_info[2]
+    bucket_epoch_end = buckets_info[1]
+    bucket_epoch_start = buckets_info[2]
     print("bucket_epoch_start is %s" % bucket_epoch_start)
     print("bucket_epoch_end is %s" % bucket_epoch_end)    
 

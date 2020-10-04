@@ -7,7 +7,7 @@
   </search>
   <search>
     <query>| makeresults 
-| eval date_start_epoch=relative_time(now(), "@y"), date_end_epoch=relative_time(now(), "@d")
+| eval date_start_epoch=relative_time(now(), "@y"), date_end_epoch=relative_time(now(), "+1y@y")
 | eval date_start_input=strftime(date_start_epoch, "%Y-%m-%d"), date_end_input=strftime(date_end_epoch, "%Y-%m-%d")
 | fields - _time</query>
     <progress>
