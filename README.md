@@ -57,7 +57,29 @@ pip install azure-cosmosdb-table
 
 These dependencies should be installed in the name space of the Splunk user owning the Splunk processes (splunk usually on Linux) which pip allows you to, which in turn allows Splunk to use the OS level Python interpreter (/usr/bin/python) and benefit from the Python SDK librairies for Azure.
 
-## Howto:
+## Deployment matrix:
+
+The Add-on should be deployed to:
+
+- Search Head(s) to use the front-end part of the application
+- Indexer(s) to perform the Azure to blob storage archiving
+
+## Installation:
+
+*Search head(s) and standalone indexer(s)*
+
+- Using the application manager in Splunk Web (Settings / Manages apps)
+- Extracting the content of the tgz archive in the “apps” directory of Splunk
+- For SHC configurations (Search Head Cluster), extract the tgz content in the SHC deployer and publish the SHC bundle
+
+*Clusters of indexers*
+
+- Extract the package to your Cluster Master in $SPLUNK_HOME/etc/master-apps
+- Create a local directory and copy the azure2blob.conf file from the default directory
+- Configure your Azure blob storage information
+- Push the cluster bundle
+
+## Configuration:
 
 1. Create a storage account in Azure if you do not have one yet
 
