@@ -99,6 +99,8 @@ Splunk indexer(s) configuration
 
 **Finally, publish the cluster bundle, once the bundle is pushed the indexers are ready to start archiving to Azure blob storage.**
 
+See :ref:`Manually testing archiving a bucket` to verify that your configuration is successful.
+
 Splunk indexe(s) configuration to enable archiving
 --------------------------------------------------
 
@@ -152,6 +154,10 @@ Update this macro to match the index(es) where you are indexing the table data, 
 
 **Once you have started to index the Azure storage data, and if there has been buckets archived already, the UI will automatically expose the archives buckets information:**
 
-.. image:: img/splunk_ui.png
-   :alt: splunk_ui.png
+.. image:: img/splunk_ui_main.png
+   :alt: splunk_ui_main.png
+   :align: center
+
+.. image:: img/splunk_ui_main2.png
+   :alt: splunk_ui_main2.png
    :align: center

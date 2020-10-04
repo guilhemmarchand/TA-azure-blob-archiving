@@ -1,5 +1,9 @@
 # Cold to Frozen framework for Splunk to archive buckets in Azure blob storage
 
+| branch | build status |
+| ---    | ---          |
+| master | [![master status](https://circleci.com/gh/guilhemmarchand/TA-azure-blob-archiving/tree/master.svg?style=svg)](https://circleci.com/gh/guilhemmarchand/TA-azure-blob-archiving/tree/master)
+
 ## Introduction
 
 **This Add-on provides a robust and smart archiving framefork solution for Splunk Enterprise and Azure blob storage.**
