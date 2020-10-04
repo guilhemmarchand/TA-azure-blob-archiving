@@ -1,74 +1,21 @@
-<form script="set_input.js">
-  <label>Az2Blob - Azure Blob Archiving Framework</label>
-  <search id="baseSearch" depends="$start_searches$">
-    <query>| savedsearch "Az2Blob - get AZ Table" | stats c by StorageAccount, PartitionKey, indexname</query>
-    <earliest>-15m</earliest>
+<dashboard theme="dark">
+  <label>Az2Blob - Overview</label>
+  <search id="baseSearch">
+    <query>| savedsearch "Az2Blob - get AZ Table" | eval time=strptime(Timestamp, "%Y-%m-%dT%H:%M:%S.%6N"), _time=strftime(time, "%s") | where _time&gt;=relative_time(now(), "-7d") | stats c by StorageAccount, PartitionKey, indexname</query>
+    <earliest>-90m</earliest>
     <latest>now</latest>
   </search>
-  <search>
-    <query>| makeresults 
-| eval date_start_epoch=relative_time(now(), "@y"), date_end_epoch=relative_time(now(), "+1y@y")
-| eval date_start_input=strftime(date_start_epoch, "%Y-%m-%d"), date_end_input=strftime(date_end_epoch, "%Y-%m-%d")
-| fields - _time</query>
-    <progress>
-      <condition>
-        <set token="form.date_start_tk">$result.date_start_input$</set>
-        <set token="form.date_end_tk">$result.date_end_input$</set>
-        <set token="start_searches">true</set>
-      </condition>
-    </progress>
-  </search>
-  <fieldset submitButton="true" autoRun="false">
-    <input type="multiselect" token="StorageAccount" searchWhenChanged="true">
-      <label>StorageAccount(s):</label>
-      <choice value="*">ANY</choice>
-      <valuePrefix>StorageAccount="</valuePrefix>
-      <valueSuffix>"</valueSuffix>
-      <delimiter> OR </delimiter>
-      <fieldForLabel>StorageAccount</fieldForLabel>
-      <fieldForValue>StorageAccount</fieldForValue>
-      <search base="baseSearch">
-        <query>stats c by StorageAccount | fields StorageAccount | sort 0 StorageAccount</query>
-      </search>
-      <initialValue>*</initialValue>
-    </input>
-    <input type="multiselect" token="PartitionKey" searchWhenChanged="true">
-      <label>Container(s):</label>
-      <choice value="*">ANY</choice>
-      <valuePrefix>PartitionKey="</valuePrefix>
-      <valueSuffix>"</valueSuffix>
-      <delimiter> OR </delimiter>
-      <fieldForLabel>PartitionKey</fieldForLabel>
-      <fieldForValue>PartitionKey</fieldForValue>
-      <search base="baseSearch">
-        <query>stats c by PartitionKey | fields PartitionKey | sort 0 PartitionKey</query>
-      </search>
-      <initialValue>*</initialValue>
-    </input>
-    <input type="multiselect" token="indexname" searchWhenChanged="true">
-      <label>indexname(s):</label>
-      <choice value="*">ANY</choice>
-      <valuePrefix>indexname="</valuePrefix>
-      <valueSuffix>"</valueSuffix>
-      <delimiter> OR </delimiter>
-      <fieldForLabel>indexname</fieldForLabel>
-      <fieldForValue>indexname</fieldForValue>
-      <search base="baseSearch">
-        <query>stats c by indexname | fields indexname | sort 0 indexname</query>
-      </search>
-      <initialValue>*</initialValue>
-    </input>
-    <input type="text" token="date_start_tk" id="date_start_input" searchWhenChanged="true">
-      <label>Filter date buckets start:</label>
-    </input>
-    <input type="text" token="date_end_tk" id="date_end_input" searchWhenChanged="true">
-      <label>Filter date buckets end:</label>
-    </input>
-  </fieldset>
+  <search id="baseRaw">
+    <query>| savedsearch "Az2Blob - get AZ Table"
+| eval time=strptime(Timestamp, "%Y-%m-%dT%H:%M:%S.%6N"), _time=strftime(time, "%s") | where _time&gt;=relative_time(now(), "-7d")</query>
+    <earliest>-90m</earliest>
+    <latest>now</latest>
+    <sampleRatio>1</sampleRatio>
+  </search>  
   <row>
     <panel>
       <single>
-        <search base="baseTable">
+        <search base="baseSearch">
           <query>stats dc(StorageAccount) as dcount</query>
         </search>
         <option name="colorMode">block</option>
@@ -79,7 +26,7 @@
         <option name="useColors">1</option>
       </single>
       <single>
-        <search base="baseTable">
+        <search base="baseSearch">
           <query>stats dc(PartitionKey) as PartitionKey</query>
         </search>
         <option name="colorMode">block</option>
@@ -90,7 +37,7 @@
         <option name="useColors">1</option>
       </single>
       <single>
-        <search base="baseTable">
+        <search base="baseSearch">
           <query>stats dc(indexname) as indexname</query>
         </search>
         <option name="colorMode">block</option>
@@ -101,7 +48,7 @@
         <option name="useColors">1</option>
       </single>
       <single>
-        <search base="baseTable">
+        <search base="baseSearch">
           <query>stats dc(bucket_id) as bucket_id</query>
         </search>
         <option name="colorMode">block</option>
@@ -115,22 +62,141 @@
   </row>
   <row>
     <panel>
-      <table>
-        <search id="baseTable" depends="$start_searches$">
-          <query>| savedsearch "Az2Blob - get AZ Table" | search $StorageAccount$ $PartitionKey$ $indexname$
-| eval filter_start_date="$date_start_tk$", filter_end_date="$date_end_tk$", filter_start_date=strptime(filter_start_date, "%Y-%m-%d"), filter_end_date=strptime(filter_end_date, "%Y-%m-%d")
-| foreach filter_start_date, filter_end_date [ eval &lt;&lt;FIELD&gt;&gt; = round('&lt;&lt;FIELD&gt;&gt;', 0) ] | where (epoch_start&gt;=filter_start_date AND epoch_end&lt;=filter_end_date) | fields - filter_start_date, filter_end_date</query>
-          <sampleRatio>1</sampleRatio>
+      <title>Buckets archived to Azure by blob container - Over the last 7 days</title>
+      <chart>
+        <search base="baseRaw">
+          <query>timechart span=1h useother=t limit=40 count as buckets_archived by PartitionKey</query>
         </search>
-        <option name="count">100</option>
-        <option name="dataOverlayMode">none</option>
-        <option name="drilldown">none</option>
-        <option name="percentagesRow">false</option>
-        <option name="refresh.display">progressbar</option>
-        <option name="rowNumbers">false</option>
-        <option name="totalsRow">false</option>
-        <option name="wrap">true</option>
-      </table>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Buckets archived to Azure by storage account - Over the last 7 days</title>
+      <chart>
+        <search base="baseRaw">
+          <query>timechart span=1h useother=t limit=40 count as buckets_archived by StorageAccount</query>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
     </panel>
   </row>
-</form>
+  <row>
+    <panel>
+      <title>Buckets archived to Azure by index (top 20) - Over the last 7 days</title>
+      <chart>
+        <search base="baseRaw">
+          <query>timechart span=1h useother=f limit=20 count as buckets_archived by indexname</query>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>BucketMover events per log level - Over the last 7 days</title>
+      <chart>
+        <search>
+          <query>index=_internal sourcetype=splunkd BucketMover
+| timechart span=1h count by log_level</query>
+          <earliest>-7d@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+</dashboard>

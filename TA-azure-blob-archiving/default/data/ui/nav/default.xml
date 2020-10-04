@@ -1,11 +1,17 @@
 <nav search_view="search" color="#404040">
   <view name="az2blob_overview" default="true" />
+  <view name="az2blob_buckets" />
   <collection label="Collections">
     <a href="search?q=%7C%20inputlookup%20az2blob_table_summary%20%7C%20eval%20keyid%3D_key">Az2blob Table Summary</a>
   </collection>
 	<collection label="Az2blob reports">
 		<saved name="Az2Blob - az2blob_table_summary Lookup gen" />
 		<saved name="Az2Blob - get AZ Table" />    
+	</collection>
+	<collection label="BucketMover reports">
+		<saved name="Az2Blob - BucketMover activity" />
+		<saved name="Az2Blob - BucketMover errors" />
+		<saved name="Az2Blob - BucketMover bucket freezing activity" />
 	</collection>
   <collection label="Search">
     <view name="search" />
