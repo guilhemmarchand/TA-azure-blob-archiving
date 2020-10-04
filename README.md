@@ -42,6 +42,11 @@ This application provides a dashboard and logic based on a KVstore collection th
 
 ![screenshot2](./docs/img/az_screen2.png)
 
+![screenshot3](./docs/img/splunk_ui_main.png)
+
+![screenshot4](./docs/img/splunk_ui_main2.png)
+
+
 **See the documentation on readthedocs.org:**
 
 https://ta-azure-blob-archiving.readthedocs.io/en/latest/
