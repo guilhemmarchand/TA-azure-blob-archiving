@@ -6,7 +6,7 @@
 Welcome to the Splunk Add-on for Azure blob storage archiving application documentation
 =======================================================================================
 
-**This Add-on provides a robust and smart achiving framefork solution for Splunk Enterprise and Azure blob storage.**
+**This Add-on provides a robust and smart archiving framefork solution for Splunk Enterprise and Azure blob storage.**
 
 It relies on the Splunk built-in archiving capabilities and Azure blob storage and tables via the usage of the Python SDK for Azure:
 
