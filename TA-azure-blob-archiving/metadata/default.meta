@@ -49,7 +49,7 @@ export = none
 
 ### SAVEDSEARCHES
 [savedsearches]
-export = none
+export = system
 
 
 ### VIEWSTATES: even normal users should be able to create shared viewstates
