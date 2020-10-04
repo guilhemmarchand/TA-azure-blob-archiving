@@ -1,6 +1,11 @@
 Compatibility
 =============
 
+Python compatibility
+####################
+
+This application requires a Python 3 interpreter to perform archiving to Azure blob storage and the interractions with Azure storage tables.
+
 Splunk compatibility
 ####################
 
