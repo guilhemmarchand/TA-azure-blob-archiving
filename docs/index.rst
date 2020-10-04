@@ -29,6 +29,14 @@ It relies on the Splunk built-in archiving capabilities and Azure blob storage a
    :alt: az_screen2.png
    :align: center
 
+.. image:: img/splunk_ui_main.png
+   :alt: splunk_ui_main.png
+   :align: center
+
+.. image:: img/splunk_ui_main2.png
+   :alt: splunk_ui_main2.png
+   :align: center
+
 **The framework and concept can be summarised the following way:**
 
 - Splunk automatically calls the AzFrozen2Blob.py Python script when a bucket is frozen from cold storage (assuming archiving is enabled on the index)
