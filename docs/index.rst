@@ -21,14 +21,6 @@ It relies on the Splunk built-in archiving capabilities and Azure blob storage a
 - https://docs.microsoft.com/en-us/python/api/?view=azure-python
 - https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-portal
 
-**The framework and concept can be summarised the following way:**
-
-- Splunk automatically calls the AzFrozen2Blob.py Python script when a bucket is frozen from cold storage (assuming archiving is enabled on the index)
-- The Python script accesses an Azure storage account and verifies in a pre-defined Azure storage table if that bucket ID has been archived already (management of buckets replication for Splunk indexers in cluster)
-- If the bucket has not been archived yet, a tgz archive of the bucket is created and uploaded to the pre-defined container in Azure blob
-- If the upload to blob is successful, the Python script inserts a new record in the Azure storage table with all the useful information related to this bucket
-- If the upload is successful, the script exists with an error code=0 which instructs Splunk that the bucket can be frozen, otherwise the script exit=1 and a new attempt will be made automatically by Splunk
-
 .. image:: img/az_screen.png
    :alt: az_screen.png
    :align: center
@@ -36,6 +28,14 @@ It relies on the Splunk built-in archiving capabilities and Azure blob storage a
 .. image:: img/az_screen2.png
    :alt: az_screen2.png
    :align: center
+
+**The framework and concept can be summarised the following way:**
+
+- Splunk automatically calls the AzFrozen2Blob.py Python script when a bucket is frozen from cold storage (assuming archiving is enabled on the index)
+- The Python script accesses an Azure storage account and verifies in a pre-defined Azure storage table if that bucket ID has been archived already (management of buckets replication for Splunk indexers in cluster)
+- If the bucket has not been archived yet, a tgz archive of the bucket is created and uploaded to the pre-defined container in Azure blob
+- If the upload to blob is successful, the Python script inserts a new record in the Azure storage table with all the useful information related to this bucket
+- If the upload is successful, the script exists with an error code=0 which instructs Splunk that the bucket can be frozen, otherwise the script exit=1 and a new attempt will be made automatically by Splunk
 
 Overview:
 =========
