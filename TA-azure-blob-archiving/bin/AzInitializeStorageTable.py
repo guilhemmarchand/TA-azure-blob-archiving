@@ -82,7 +82,6 @@ config.read(config_inifile)
 
 # Handles values
 AZ_BLOB_CONTAINER_LOCAL = config.get("azure2blob", "AZ_BLOB_CONTAINER")
-AZ_BLOB_CONNECTION_URI = config.get("azure2blob", "AZ_BLOB_CONNECTION_URI")
 AZ_BLOB_CONNECTION_STRING = config.get("azure2blob", "AZ_BLOB_CONNECTION_STRING")
 AZ_STORAGE_TABLE_NAME_LOCAL = config.get("azure2blob", "AZ_STORAGE_TABLE_NAME")
 
@@ -99,12 +98,6 @@ if AZ_BLOB_CONTAINER_LOCAL:
     AZ_BLOB_CONTAINER = AZ_BLOB_CONTAINER_LOCAL
 else:
     AZ_BLOB_CONTAINER = AZ_BLOB_CONTAINER_DEFAULT
-
-# Verify AZ_BLOB_CONNECTION_URI
-if not AZ_BLOB_CONNECTION_URI:
-    print('The environment variable AZ_BLOB_CONNECTION_URI could not be verified, this variable is required '
-                  'and needs to contain the Azure blob connection main URL')
-    sys.exit(1)
 
 # Verify AZ_BLOB_CONNECTION_STRING env variable, this is the SAS connection string to the Azure Blob storage
 if not AZ_BLOB_CONNECTION_STRING:

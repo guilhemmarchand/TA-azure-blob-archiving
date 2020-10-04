@@ -104,7 +104,16 @@ Splunk indexe(s) configuration to enable archiving
 
 **To enable Azure blob archiving, you need to configure your indexes.conf to include the coldToFrozenScript parameter:**
 
+*For Splunk version prior to 8.0, it is mandatory to use the shell wrapper to avoid Python import troubles:*
+
 *Example:*
+
+::
+
+    [firewall_emea]
+    coldToFrozenScript = "$SPLUNK_HOME/etc/slave-apps/TA-azure-blob-cold2frozen/bin/AzFrozen2Blob.sh"
+
+*Splunk instances starting 8.0 can directly call the Python backend:*
 
 ::
 
@@ -114,6 +123,7 @@ Splunk indexe(s) configuration to enable archiving
 *Notes:*
 
 - If the system level Python3 interpreter is not available in ``/usr/bin/python3``, you can either change this location or create a symbolic link as a best practice
+- If you cannot define the symbolic link to ``/usr/bin/python3`` and you are running a Splunk version prior to Splunk 8.0, you will need to update the Python path in ``AzFrozen2Blob.sh`` (CAUTION: this is not upgrade resilient! A much better practice is to fix the OS)
 - If you are configuring a standalone indexer rather indexers in clusters, change ``slave-apps`` to ``apps``
 - Repeat this operation for every index where archiving needs to be enabled
 

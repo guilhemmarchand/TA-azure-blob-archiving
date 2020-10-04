@@ -57,14 +57,6 @@ Deployment and configuration:
    deployment
    configuration
 
-User guide:
-===========
-
-.. toctree::
-   :maxdepth: 2
-
-   userguide
-
 Troubleshoot:
 =============
 
