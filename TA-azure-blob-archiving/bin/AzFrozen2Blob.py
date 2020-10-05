@@ -218,7 +218,7 @@ def handleOldFlatfileExport(base, files):
 if __name__ == "__main__":
     searchable = False
     if len(sys.argv) != 2:
-        sys.exit('usage: python coldToFrozenExample.py <bucket_dir_to_archive>')
+        sys.exit('usage: python3 AzFrozen2Blob.py <bucket_dir_to_archive>')
 
     bucket = sys.argv[1]
     print("bucket is %s"%bucket)

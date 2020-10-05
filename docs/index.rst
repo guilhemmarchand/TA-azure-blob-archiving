@@ -64,6 +64,7 @@ Deployment and configuration:
 
    deployment
    configuration
+   tools
 
 Troubleshoot:
 =============
