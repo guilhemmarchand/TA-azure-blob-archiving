@@ -48,7 +48,7 @@
         <option name="useColors">1</option>
       </single>
       <single>
-        <search base="baseSearch">
+        <search base="baseRaw">
           <query>stats dc(bucket_id) as bucket_id</query>
         </search>
         <option name="colorMode">block</option>
