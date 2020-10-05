@@ -113,14 +113,14 @@ Splunk indexe(s) configuration to enable archiving
 ::
 
     [firewall_emea]
-    coldToFrozenScript = "$SPLUNK_HOME/etc/slave-apps/TA-azure-blob-cold2frozen/bin/AzFrozen2Blob.sh"
+    coldToFrozenScript = "$SPLUNK_HOME/etc/slave-apps/TA-azure-blob-archiving/bin/AzFrozen2Blob.sh"
 
 *Splunk instances starting 8.0 can directly call the Python backend:*
 
 ::
 
     [firewall_emea]
-    coldToFrozenScript = "/usr/bin/python3" "$SPLUNK_HOME/etc/slave-apps/TA-azure-blob-cold2frozen/bin/AzFrozen2Blob.py"
+    coldToFrozenScript = "/usr/bin/python3" "$SPLUNK_HOME/etc/slave-apps/TA-azure-blob-archiving/bin/AzFrozen2Blob.py"
 
 *Notes:*
 
