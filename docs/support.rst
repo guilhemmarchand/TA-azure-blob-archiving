@@ -8,9 +8,9 @@ To get support, use of one the following options:
 Splunk Answers
 ==============
 
-Open a question in Splunk answers for the application:
+Open a question in Splunk Community:
 
-- TBD
+- https://community.splunk.com/
 
 Splunk community slack
 ======================
