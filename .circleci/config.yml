@@ -72,7 +72,7 @@ jobs:
             pwd
             ls -ltr
             source venv/bin/activate
-            splunk-appinspect inspect ../TA-azure-blob-archiving/TA-azure-blob-archiving.tar.gz --included-tags=cloud
+            splunk-appinspect inspect ../TA-azure-blob-archiving/TA-azure-blob-archiving.tar.gz
       - save_cache:
           key: deps1-{{ .Branch }}-{{ checksum "TA-azure-blob-archiving/TA-azure-blob-archiving/default/app.conf" }}
           paths:
