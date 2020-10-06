@@ -1,6 +1,11 @@
 Release notes
 #############
 
+Version 1.0.3
+=============
+
+- Change: minor improvement for the BucketMover errors report, use case sensitivy while search for ERROR patterns
+
 Version 1.0.2
 =============
 
