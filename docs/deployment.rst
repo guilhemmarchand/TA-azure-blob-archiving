@@ -7,10 +7,12 @@ Deployment matrix
 +----------------------+---------------------+
 | Splunk roles         | required            |
 +======================+=====================+
-| Search head          |   yes               |
+| Search head          |   yes*              |
 +----------------------+---------------------+
 | Indexer tiers        |   Yes               |
 +----------------------+---------------------+
+
+*Search Head deployment is only required if you intend to use the front-end part of the application*
 
 If Splunk search heads are running in Search Head Cluster (SHC), the Splunk application must be deployed by the SHC deployer.
 
@@ -28,6 +30,8 @@ Search Head(s)
 - https://docs.splunk.com/Documentation/AddOns/released/MSCloudServices/Configureinputs4
 
 Search head(s) do not have direct interractions with Azure storage blob or tables, and do not need to satisfy any additional dependencies.
+
+In a distributed deployment content, you would most likely deploy the Splunk Add-on for Microsoft Services on a heavy forwarder layer that you use for data collection purposes.
 
 Indexer(s)
 ----------
@@ -49,8 +53,8 @@ Azure SDK for Python
 
 ::
 
-    pip3 install azure-storage-blob
-    pip3 install azure-cosmosdb-table
+    sudo pip3 install azure-storage-blob
+    sudo pip3 install azure-cosmosdb-table
 
 Depending on the context, you may prefer to run the pip module installation only for the user that owns the Splunk processes:
 
@@ -60,10 +64,14 @@ Depending on the context, you may prefer to run the pip module installation only
     pip3 install azure-storage-blob
     pip3 install azure-cosmosdb-table
 
+*In some systens, you may need to install the modules with root permissions, see the first option.*
+
+*You may as well install manually the Python modules instead of using pip if you cannot use it (but pip is strongly recommended), follow the PYpi links, download the packages, and run the installer as the splunk user.*
+
 **Once you installed the Azure SDKs, you can very easily verify that the modules can be imported successfully:**
 
 - Open a Python3 interpreter
-- Verify that you can import the Azure SDKs:
+- Verify that you can import the Azure SDK modules:
 
 ``from azure.storage.blob import BlobClient, BlobServiceClient``
 
@@ -87,6 +95,8 @@ Depending on the context, you may prefer to run the pip module installation only
     >>>
 
 If the import is successful as the example above, the dependencies are statisfied successfully.
+
+Do not continue if you are failing to import any of the two modules, until you fix the issue.
 
 Initial deployment
 ==================

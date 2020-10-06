@@ -86,3 +86,5 @@ Investigating BuckerMover logs
 ::
 
     10-04-2020 13:18:55.257 +0000 ERROR BucketMover - coldToFrozenScript ImportError: This package should not be accessible on Python 3. Either you are trying to run from the python-future src folder or your installation of python-future is corrupted.
+
+The front-end part of the application provides buit-in dashboards and reports for this purpose.
