@@ -194,10 +194,10 @@
       </chart>
     </panel>
     <panel>
-      <title>Volume of data archived (MB) - Over the last 7 days</title>
+      <title>Volume of data archived (GB) - Over the last 7 days</title>
       <chart>
         <search base="baseRaw">
-          <query>timechart span=1h useother=f limit=20 sum(size_mb) as "Volume (MB)"</query>
+          <query>timechart span=1h useother=f limit=20 sum(size_mb) as size | eval size=round(size/1024, 2)</query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
