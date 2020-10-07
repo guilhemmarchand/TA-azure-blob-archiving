@@ -1,6 +1,11 @@
 Release notes
 #############
 
+Version 1.0.4
+=============
+
+- Feature: Add archived volume Metadata to be stored in the Azure table, and used for analytic purposes in Splunk UIs
+
 Version 1.0.3
 =============
 
