@@ -228,10 +228,7 @@ if __name__ == "__main__":
         bucket = bucket[:-1]
 
     idx_struct = re.search(r'(.*)\/(colddb|db)\/(.*)', bucket, re.MULTILINE)
-
     print("idx_struct is %s" % idx_struct)
-    #idx_schema = idx_struct.group(2)
-    #print("idx_schema is %s" % idx_schema)
 
     if idx_struct is None:
         indexname = os.path.basename(os.path.dirname(bucket))
@@ -327,11 +324,20 @@ if __name__ == "__main__":
     make_tarfile(bucket_tgz, bucket)
     time.sleep(5)
 
+    # Get tgz size in bytes
+    try : 
+        size = os.path.getsize(bucket_tgz) 
+    
+    except OSError : 
+        print("Path '%s' does not exists or is inaccessible" %bucket_tgz) 
+        sys.exit() 
+    
+    # Print the size (in bytes) 
+    # of specified path  
+    print("Size (In bytes) of '% s':" % bucket_tgz, size)    
+
     # Print the peer name
     print("the peer name is %s" %peer_name)
-
-    #s3 = boto3.resource('s3')
-    #s3.Object(s3_bucket, peer_name + "/" + indexname + '/' + bucket_name + '.tgz').put(Body=open(bucket + '.tgz', 'rb'), StorageClass='STANDARD_IA')
 
     blob_name = indexname + "/" + bucket_id + ".tgz"
     blob = BlobClient.from_connection_string(conn_str=AZ_BLOB_CONNECTION_STRING, container_name=AZ_BLOB_CONTAINER, blob_name=blob_name)
@@ -354,7 +360,7 @@ if __name__ == "__main__":
         record = {'PartitionKey': AZ_BLOB_CONTAINER, 'RowKey': bucket_id, 'blob_name': blob_name,                
                 'bucket_id': bucket_id, 'original_bucket_name': bucket_name,
                 'original_peer_name': peer_name, 'original_peer_guid': original_peer_guid,
-                'epoch_start': bucket_epoch_start, 'epoch_end': bucket_epoch_end,
+                'epoch_start': bucket_epoch_start, 'epoch_end': bucket_epoch_end, 'size_bytes': size,
                 'indexname': indexname, 'clustered_flag': clustered_flag, 'status': 'success'}
         table_service.insert_entity(AZ_STORAGE_TABLE_NAME, record)
         sys.exit(0)
