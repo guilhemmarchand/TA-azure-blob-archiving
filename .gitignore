@@ -38,3 +38,6 @@ backups
 
 # appinspect reports
 appinspect_report*.html
+
+# output
+output/*.tgz
