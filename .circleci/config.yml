@@ -42,7 +42,7 @@ jobs:
             ./build.sh
             cd $HOME
             mkdir $HOME/dist
-            mv ${app}/output/${app}_${version}.tgz $HOME/dist/${app}.tgz
+            mv ${app}/${app}/output/${app}_${version}.tgz $HOME/dist/${app}.tgz
             cd $HOME
             $HOME/repo/splunk-appinspect-pipeline/appinspect_vetting.sh --username=$SPLUNK_BASE_LOGIN --password=$SPLUNK_BASE_PASSWD --app=$HOME/dist/${app}.tgz --included_tags="splunk_appinspect,future" --excluded_tags=manual --excluded_checks=check_indexes_conf_does_not_exist --html_report_out=/tmp/appinspect_report.html
       - save_cache:
