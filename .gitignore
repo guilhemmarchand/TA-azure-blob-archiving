@@ -41,3 +41,6 @@ appinspect_report*.html
 
 # output
 output/*.tgz
+
+# build
+build/TA-azure-blob-archiving
