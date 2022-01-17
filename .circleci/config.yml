@@ -36,6 +36,7 @@ jobs:
           name: run appinspect API app vetting
           command: |
             app="TA-azure-blob-archiving"
+            cd ${app}
             version=$(grep 'version =' TA-azure-blob-archiving/default/app.conf | head -1 | awk '{print $3}' | sed 's/\.//g')
             cd $app/build
             ./build.sh
