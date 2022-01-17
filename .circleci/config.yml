@@ -31,7 +31,7 @@ jobs:
           command: |
             git clone https://github.com/guilhemmarchand/splunk-appinspect-pipeline.git
       - restore_cache:
-          key: deps1-{{ .Branch }}-{{ checksum "TA-azure-blob-archiving/default/app.conf" }}
+          key: deps1-{{ .Branch }}-{{ checksum "TA-azure-blob-archiving/TA-azure-blob-archiving/default/app.conf" }}
       - run:
           name: run appinspect API app vetting
           command: |
@@ -45,7 +45,7 @@ jobs:
             cd $HOME
             $HOME/repo/splunk-appinspect-pipeline/appinspect_vetting.sh --username=$SPLUNK_BASE_LOGIN --password=$SPLUNK_BASE_PASSWD --app=$HOME/dist/${app}.tgz --included_tags="splunk_appinspect,future" --excluded_tags=manual --excluded_checks=check_indexes_conf_does_not_exist --html_report_out=/tmp/appinspect_report.html
       - save_cache:
-          key: deps1-{{ .Branch }}-{{ checksum "TA-azure-blob-archiving/default/app.conf" }}
+          key: deps1-{{ .Branch }}-{{ checksum "TA-azure-blob-archiving/TA-azure-blob-archiving/default/app.conf" }}
           paths:
             - "venv"
       - persist_to_workspace:
