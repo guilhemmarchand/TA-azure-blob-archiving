@@ -38,7 +38,7 @@ jobs:
             app="TA-azure-blob-archiving"
             cd ${app}
             version=$(grep 'version =' TA-azure-blob-archiving/default/app.conf | head -1 | awk '{print $3}' | sed 's/\.//g')
-            cd $app/build
+            cd build
             ./build.sh
             cd $HOME
             mkdir $HOME/dist
