@@ -21,6 +21,7 @@ import socket
 import datetime
 import configparser
 import contextlib
+import logging
 
 from azure.storage.blob import BlobClient, BlobServiceClient
 from azure.cosmosdb.table.tableservice import TableService
@@ -35,6 +36,21 @@ except KeyError:
                   'manually you need to export it before processing')
     sys.exit(1)
 SPLUNK_HOME = os.environ['SPLUNK_HOME']
+
+# append libs
+sys.path.append(os.path.join(SPLUNK_HOME, 'etc', 'apps', 'TA-azure-blob-archiving', 'lib'))
+
+# set logging
+filehandler = logging.FileHandler(SPLUNK_HOME + "/var/log/splunk/azure2blob_azfrozen2blob.log", 'a')
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(filename)s %(funcName)s %(lineno)d %(message)s')
+filehandler.setFormatter(formatter)
+log = logging.getLogger()  # root logger - Good to get it only once.
+for hdlr in log.handlers[:]:  # remove the existing file handlers
+    if isinstance(hdlr,logging.FileHandler):
+        log.removeHandler(hdlr)
+log.addHandler(filehandler)      # set the new handler
+# set the log level to INFO, DEBUG as the default is ERROR
+log.setLevel(logging.INFO)
 
 # Guest Operation System type
 ostype = platform.system().lower()
@@ -75,16 +91,33 @@ config = configparser.RawConfigParser()
 if is_windows:
     default_config_inifile = APP + "\\default\\azure2blob.conf"
     config_inifile = APP + "\\local\\azure2blob.conf"
+    default_app_settings_initfile = APP + "\\default\\azure2blob_settings.conf"
+    local_app_settings_initfile = APP + "\\default\\azure2blob_settings.conf"
 else:
     default_config_inifile = APP + "/default/azure2blob.conf"
     config_inifile = APP + "/local/azure2blob.conf"
+    default_app_settings_initfile = APP + "/default/azure2blob_settings.conf"
+    local_app_settings_initfile = APP + "/local/azure2blob.conf"
 
 # First read default config
 config.read(default_config_inifile)
+config.read(default_app_settings_initfile)
 
 # Get default allowed custom values
 AZ_STORAGE_TABLE_NAME_DEFAULT = config.get("azure2blob", "AZ_STORAGE_TABLE_NAME")
 AZ_BLOB_CONTAINER_DEFAULT = config.get("azure2blob", "AZ_BLOB_CONTAINER")
+AZ_LOGGING_LEVEL = config.get("logging", "loglevel")
+
+# If app has a local setting file, try to read logging
+if os.path.isfile(local_app_settings_initfile):
+    try:
+        config.read(local_app_settings_initfile)
+        AZ_LOGGING_LEVEL = config.get("logging", "loglevel")
+    except Exception as e:
+        AZ_LOGGING_LEVEL = AZ_LOGGING_LEVEL
+
+# finally set logging level
+log.setLevel(AZ_LOGGING_LEVEL)
 
 # Check config exists
 if not os.path.isfile(config_inifile):

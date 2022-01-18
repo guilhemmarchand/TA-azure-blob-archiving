@@ -45,3 +45,4 @@ output/*.tgz
 # build
 build/TA-azure-blob-archiving
 output/TA-azure-blob-archiving
+output/release-sha256.txt

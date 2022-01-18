@@ -8,7 +8,8 @@
 		<saved name="Az2Blob - az2blob_table_summary Lookup gen" />
 		<saved name="Az2Blob - get AZ Table" />    
 	</collection>
-	<collection label="BucketMover reports">
+	<collection label="Az2blob logging">
+		<saved name="Az2Blob - AzFrozen2blob logs" />  
 		<saved name="Az2Blob - BucketMover activity" />
 		<saved name="Az2Blob - BucketMover errors" />
 		<saved name="Az2Blob - BucketMover bucket freezing activity" />
