@@ -3,6 +3,44 @@
         "configuration": {
             "tabs": [
                 {
+                    "name": "azure2blob",
+                    "entity": [
+                        {
+                            "type": "text",
+                            "label": "Azure storage blob container",
+                            "help": "The name of the Azure storage blob container, if the container does not exist, it will be created automatically",
+                            "field": "AZ_BLOB_CONTAINER",
+                            "defaultValue": "splunk-cold2frozen-archives",
+                            "required": true,
+                            "options": {
+                                "display": true
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "label": "Azure connection string",
+                            "help": "The value for the Azure Storage Account connection string",
+                            "field": "AZ_BLOB_CONNECTION_STRING",
+                            "required": true,
+                            "options": {
+                                "display": true
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "label": "Azure storage table name",
+                            "help": "The name of the Azure storage table to be used, if it does exists, it will be created automatically",
+                            "field": "AZ_STORAGE_TABLE_NAME",
+                            "defaultValue": "splunkdb",
+                            "required": true,
+                            "options": {
+                                "display": true
+                            }
+                        }
+                    ],
+                    "title": "Azure2Blob settings"
+                },
+                {
                     "name": "logging",
                     "entity": [
                         {
