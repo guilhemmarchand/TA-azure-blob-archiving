@@ -13,6 +13,7 @@
 		<saved name="Az2Blob - BucketMover errors" />
 		<saved name="Az2Blob - BucketMover bucket freezing activity" />
 	</collection>
+  <view name="configuration" />
   <collection label="Search">
     <view name="search" />
     <view name="reports" />
