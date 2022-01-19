@@ -220,6 +220,9 @@ class AzPurgeBlob(StreamingCommand):
                 subrecord_PartitionKey = subrecord.get('PartitionKey')
                 subrecord_RowKey = subrecord.get('RowKey')
 
+                # boolean
+                wasPurged = False
+
                 #
                 # simulation
                 #
@@ -248,8 +251,36 @@ class AzPurgeBlob(StreamingCommand):
                         # log
                         logging.info("blob=\"" + str(subrecord_blob_file) + " was successfully purged")
 
+                        wasPurged = True
+
                     except Exception as e:
                         logging.error("Error while performing the blob file purge with exception: " + str(e))
+
+                    # if the blob was successfully purged, attempt to update the table
+                    if wasPurged and self.update_table =='true':
+                        logging.debug("Attempting to retrieve the record in the Azure table")
+                        try:
+                            table_record = table_service.get_entity(subrecord_Table, subrecord_PartitionKey, subrecord_RowKey, timeout=60)
+                            logging.debug("Record in table: " + str(table_record))
+
+                            # Set the new record
+                            table_record_update = {
+                                'PartitionKey': table_record.get('PartitionKey'), 'RowKey': table_record.get('RowKey'), 'blob_name': table_record.get('blob_name'),
+                                'bucket_id': table_record.get('bucket_id'), 'original_bucket_name': table_record.get('original_bucket_name'),
+                                'original_peer_name': table_record.get('original_peer_name'), 'original_peer_guid': table_record.get('original_peer_guid'),
+                                'epoch_start': table_record.get('epoch_start'), 'epoch_end': table_record.get('epoch_end'), 'size_bytes': table_record.get('size_bytes'),
+                                'indexname': table_record.get('indexname'), 'clustered_flag': table_record.get('clustered_flag'), 'status': 'deleted'
+                            }
+
+                            # Attempt to update the table record
+                            try:
+                                table_service.update_entity(subrecord_Table, table_record_update, timeout=60)
+                                logging.debug("record in Azure storage table was successfully updated")
+                            except Exception as e:
+                                logging.error("Error while attempting to update the table record with exception: " + str(e))
+
+                        except Exception as e:
+                            logging.error("Error while retrieving the table record with exception: " + str(e))
 
             # processed count
             processed_count = processed_count + chunk_len
