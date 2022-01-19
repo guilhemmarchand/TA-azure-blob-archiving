@@ -60,6 +60,12 @@ class AzGetTable(GeneratingCommand):
         **Description:** The value for the PartitionKey.''',
         require=True)
 
+    custom_filter = Option(
+        doc='''
+        **Syntax:** **custom_filter=****
+        **Description:** Optionally include a custom filter, example: status eq \'deleted\'''',
+        require=False, default='None')
+
 
     def generate(self, **kwargs):
 
@@ -129,6 +135,11 @@ class AzGetTable(GeneratingCommand):
 
             # retrieve all records
             filterStr = "PartitionKey eq \'" + str(self.partition_key) + "\'"
+
+            # include the custom filter if set
+            if self.custom_filter != 'None':
+                filterStr = filterStr + ' and ' + str(self.custom_filter)
+
             tasks = table_service.query_entities(
                 self.target_table, filter=filterStr)
             for task in tasks:
