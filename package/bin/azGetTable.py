@@ -140,9 +140,9 @@ class AzGetTable(GeneratingCommand):
                     'epoch_start': task.get('epoch_start'), 'epoch_end': task.get('epoch_end'), 'size_bytes': task.get('size_bytes'),
                     'indexname': task.get('indexname'), 'clustered_flag': task.get('clustered_flag'), 'status': task.get('status')
                 }
-
+            
                 # yield
-                data = {'_time': time.time(), '_raw': json.dumps(record, indent=1)}
+                data = {'_time': task.get('epoch_end'), '_raw': json.dumps(record, indent=1)}
                 yield data
 
         else:
