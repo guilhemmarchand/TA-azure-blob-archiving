@@ -10,6 +10,9 @@
 	</collection>
 	<collection label="Az2blob logging">
 		<saved name="Az2Blob - AzFrozen2blob logs" />  
+		<saved name="Az2Blob - AzExportTable logs" />
+		<saved name="Az2Blob - AzPurgeBlob logs" />    
+		<saved name="Az2Blob - azGetTable logs" />
 		<saved name="Az2Blob - BucketMover activity" />
 		<saved name="Az2Blob - BucketMover errors" />
 		<saved name="Az2Blob - BucketMover bucket freezing activity" />

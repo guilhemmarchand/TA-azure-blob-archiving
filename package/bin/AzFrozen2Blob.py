@@ -18,7 +18,6 @@
 import sys, os, gzip, shutil, subprocess, random, re, platform, time
 import tarfile
 import socket
-import datetime
 import configparser
 import contextlib
 import logging
@@ -83,79 +82,62 @@ elif os.path.exists(TA_APP_CLUSTERED):
 else:
     msg = 'The Application root directory could not be found, is the TA-azure-blob-cold2frozen installed ? We tried: ' + \
           str(TA_APP) + ' ' + str(TA_APP_CLUSTERED)
-    print(msg)
+    logging.error(msg)
     sys.exit(1)
 
 # Get config
 config = configparser.RawConfigParser()
 if is_windows:
-    default_config_inifile = APP + "\\default\\azure2blob.conf"
-    config_inifile = APP + "\\local\\azure2blob.conf"
     default_app_settings_initfile = APP + "\\default\\azure2blob_settings.conf"
     local_app_settings_initfile = APP + "\\default\\azure2blob_settings.conf"
 else:
-    default_config_inifile = APP + "/default/azure2blob.conf"
-    config_inifile = APP + "/local/azure2blob.conf"
     default_app_settings_initfile = APP + "/default/azure2blob_settings.conf"
     local_app_settings_initfile = APP + "/local/azure2blob.conf"
 
 # First read default config
-config.read(default_config_inifile)
 config.read(default_app_settings_initfile)
 
-# Get default allowed custom values
-AZ_STORAGE_TABLE_NAME_DEFAULT = config.get("azure2blob", "AZ_STORAGE_TABLE_NAME")
-AZ_BLOB_CONTAINER_DEFAULT = config.get("azure2blob", "AZ_BLOB_CONTAINER")
+# Get default values
+AZ_BLOB_CONNECTION_STRING = config.get("azure2blob", "AZ_BLOB_CONNECTION_STRING")
+AZ_STORAGE_TABLE_NAME = config.get("azure2blob", "AZ_STORAGE_TABLE_NAME")
+AZ_BLOB_CONTAINER = config.get("azure2blob", "AZ_BLOB_CONTAINER")
 AZ_LOGGING_LEVEL = config.get("logging", "loglevel")
+
+# Check config exists
+if not os.path.isfile(local_app_settings_initfile):
+    msg = 'Please configure your Azure blob settings by creating and configuring a local/azblobconfig_settings.conf.'
+    logging.error(msg)
+    sys.exit(1)    
 
 # If app has a local setting file, try to read logging
 if os.path.isfile(local_app_settings_initfile):
     try:
         config.read(local_app_settings_initfile)
+        AZ_BLOB_CONNECTION_STRING = config.get("azure2blob", "AZ_BLOB_CONNECTION_STRING")
+        AZ_STORAGE_TABLE_NAME = config.get("azure2blob", "AZ_STORAGE_TABLE_NAME")
+        AZ_BLOB_CONTAINER = config.get("azure2blob", "AZ_BLOB_CONTAINER")
         AZ_LOGGING_LEVEL = config.get("logging", "loglevel")
     except Exception as e:
+        AZ_BLOB_CONNECTION_STRING = AZ_BLOB_CONNECTION_STRING
+        AZ_STORAGE_TABLE_NAME = AZ_STORAGE_TABLE_NAME
+        AZ_BLOB_CONTAINER = AZ_BLOB_CONTAINER
         AZ_LOGGING_LEVEL = AZ_LOGGING_LEVEL
 
 # finally set logging level
 log.setLevel(AZ_LOGGING_LEVEL)
 
-# Check config exists
-if not os.path.isfile(config_inifile):
-    msg = 'Please configure your Azure blob settings by creating and configuring a local/azblobconfig.conf.'
-    print(msg)
-    sys.exit(1)    
-
-# Then read local config
-config.read(config_inifile)
-
-# Handles values
-AZ_BLOB_CONTAINER_LOCAL = config.get("azure2blob", "AZ_BLOB_CONTAINER")
-AZ_BLOB_CONNECTION_STRING = config.get("azure2blob", "AZ_BLOB_CONNECTION_STRING")
-AZ_STORAGE_TABLE_NAME_LOCAL = config.get("azure2blob", "AZ_STORAGE_TABLE_NAME")
-
-# Handle allowed custom values
-
-# AZ storage table name
-if AZ_STORAGE_TABLE_NAME_LOCAL:
-    AZ_STORAGE_TABLE_NAME = AZ_STORAGE_TABLE_NAME_LOCAL
-else:
-    AZ_STORAGE_TABLE_NAME = AZ_STORAGE_TABLE_NAME_DEFAULT
-
-# AZ blob container
-if AZ_BLOB_CONTAINER_LOCAL:
-    AZ_BLOB_CONTAINER = AZ_BLOB_CONTAINER_LOCAL
-else:
-    AZ_BLOB_CONTAINER = AZ_BLOB_CONTAINER_DEFAULT
-
-# Verify AZ_BLOB_CONNECTION_STRING env variable, this is the SAS connection string to the Azure Blob storage
-if not AZ_BLOB_CONNECTION_STRING:
-    print('The environment variable AZ_BLOB_CONNECTION_STRING could not be verified, this variable is required '
+# do not proceed of the connection string is not configured yet
+if str(AZ_BLOB_CONNECTION_STRING) == 'connection_string_to_the_blob_storage':
+    logging.error("The Azure connection string was not configured yet, cannot proceed.")
+    sys.exit(1)
+elif not AZ_BLOB_CONNECTION_STRING:
+    logging.error('The environment variable AZ_BLOB_CONNECTION_STRING could not be verified, this variable is required '
                   'and needs to contain the Azure blob connection string')
     sys.exit(1)
 
 # Verify AZ_BLOB_CONTAINER env variable, this is the blob container value
 if not AZ_BLOB_CONTAINER:
-    print('The environment variable AZ_BLOB_CONTAINER could not be verified, this variable is required '
+    logging.error('The environment variable AZ_BLOB_CONTAINER could not be verified, this variable is required '
                   'and needs to contain the value for Azure blob container')
     sys.exit(1)
 
@@ -173,14 +155,21 @@ except:
     container_was_created = False
 
 if container_was_created:
-    print("The Azure blob container " + str(AZ_BLOB_CONTAINER) + " has been created.")
+    logging.info("The Azure blob container " + str(AZ_BLOB_CONTAINER) + " has been created.")
 
 # Create the AZ table service
 table_service = TableService(connection_string=AZ_BLOB_CONNECTION_STRING)
 
-# Silently create the AZ storage table if does not exist yet
-with contextlib.redirect_stderr(None):
+# Create the AZ table if necessary
+try:
     table_service.create_table(AZ_STORAGE_TABLE_NAME)
+    logging.info("The Azure Storage table " + str(AZ_STORAGE_TABLE_NAME) + " does not exist yet, and has been created automatically")
+except Exception as e:
+    logging.info("Assuming the The Azure Storage table " + str(AZ_STORAGE_TABLE_NAME) + " has been created already")
+
+#
+# FUNCTIONS
+#
 
 
 def getHostName():
@@ -205,19 +194,19 @@ def make_tarfile(output_filename, source_dir):
 # For new style buckets (v4.2+), we can remove all files except for the rawdata.
 # We can later rebuild all metadata and tsidx files with "splunk rebuild"
 def handleNewBucket(base, files):
-    print('Archiving bucket: ' + base)
+    logging.info('Archiving bucket: ' + base)
     # the only non file is the rawdata folder, which we want to archive
     for f in files:
         full = os.path.join(base, f)
         if os.path.isfile(full):
-            print(full)
+            logging.info(full)
             os.remove(full)
 
 
 # For buckets created before 4.2, simply gzip the tsidx files
 # To thaw these buckets, be sure to first unzip the tsidx files
 def handleOldBucket(base, files):
-    print('Archiving old-style bucket: ' + base)
+    logging.info('Archiving old-style bucket: ' + base)
     for f in files:
         full = os.path.join(base, f)
         if os.path.isfile(full) and (f.endswith('.tsidx') or f.endswith('.data')):
@@ -245,8 +234,11 @@ def handleOldFlatfileExport(base, files):
         elif os.path.isdir(full):
             shutil.rmtree(full)
         else:
-            print('Warning: found irregular bucket file: ' + full)
+            logging.warn('Warning: found irregular bucket file: ' + full)
 
+#
+# PROGRAM START
+#
 
 if __name__ == "__main__":
     searchable = False
@@ -254,74 +246,76 @@ if __name__ == "__main__":
         sys.exit('usage: python3 AzFrozen2Blob.py <bucket_dir_to_archive>')
 
     bucket = sys.argv[1]
-    print("bucket is %s"%bucket)
+    logging.info("bucket is %s"%bucket)
 
     if bucket.endswith('/'):
-        print("the bucket name ends with a / %s" % bucket)
+        logging.debug("the bucket name ends with a / %s" % bucket)
         bucket = bucket[:-1]
 
     idx_struct = re.search(r'(.*)\/(colddb|db)\/(.*)', bucket, re.MULTILINE)
-    print("idx_struct is %s" % idx_struct)
+    logging.debug("idx_struct is %s" % idx_struct)
 
     if idx_struct is None:
         indexname = os.path.basename(os.path.dirname(bucket))
-        print("indexname is %s" % indexname)
+        logging.debug("indexname is %s" % indexname)
     else:
         indexname = os.path.basename(os.path.dirname(os.path.dirname(bucket)))
-        print("indexname is %s" % indexname)
+        logging.debug("indexname is %s" % indexname)
 
     if not os.path.isdir(bucket):
-        sys.exit('Given bucket is not a valid directory: ' + bucket)
+        logging.error('Given bucket is not a valid directory: ' + bucket)
+        sys.exit(1)
 
     rawdatadir = os.path.join(bucket, 'rawdata')
     if not os.path.isdir(rawdatadir):
-        sys.exit('No rawdata directory, given bucket is likely invalid: ' + bucket)
+        logging.error('No rawdata directory, given bucket is likely invalid: ' + bucket)
+        sys.exit(1)
 
     files = os.listdir(bucket)
     journal_gz = os.path.join(rawdatadir, 'journal.gz')
     journal_zst = os.path.join(rawdatadir, 'journal.zst')
-    print("is it gz? %s" % os.path.isfile(journal_gz))
-    print("is it zst? %s" % os.path.isfile(journal_zst))
+    logging.debug("is it gz? %s" % os.path.isfile(journal_gz))
+    logging.debug("is it zst? %s" % os.path.isfile(journal_zst))
     if os.path.isfile(journal_zst) or os.path.isfile(journal_gz):
         handleNewBucket(bucket, files)
     else:
         handleOldBucket(bucket, files)
 
     peer_name = getHostName()
-    print("peer_name is %s" % peer_name)
+    logging.debug("peer_name is %s" % peer_name)
 
     bucket_name = bucket.split("/")[-1]
-    print("bucket_name is %s" % bucket_name)
+    logging.debug("bucket_name is %s" % bucket_name)
 
     # Get bucket UTC epoch start and UTC epoch end
     buckets_info = bucket_name.split('_')
     bucket_epoch_start, bucket_epoch_end = "null", "null"
     bucket_epoch_end = buckets_info[1]
     bucket_epoch_start = buckets_info[2]
-    print("bucket_epoch_start is %s" % bucket_epoch_start)
-    print("bucket_epoch_end is %s" % bucket_epoch_end)    
+    logging.debug("bucket_epoch_start is %s" % bucket_epoch_start)
+    logging.debug("bucket_epoch_end is %s" % bucket_epoch_end)    
 
     bucket_id_list = bucket_name.split("_")[3:]
-    print("bucket_id_list is %s" % bucket_id_list)
+    logging.debug("bucket_id_list is %s" % bucket_id_list)
     if len(bucket_id_list) == 1:
         clustered_flag = "0"
         # This means it's a non replicated bucket, so need to grab the GUID from instance.cfg
-        print("# This means it's a non replicated bucket, so need to grab the GUID from instance.cfg")
+        logging.debug("# This means it's a non replicated bucket, so need to grab the GUID from instance.cfg")
         with open(SPLUNK_HOME + "/etc/instance.cfg", "r") as f:
             read_data = f.read()
             match = re.search(r'^guid = (.*)', read_data, re.MULTILINE)
             original_peer_guid = match.group(1)
-            print("original_peer_guid is %s" % original_peer_guid)
+            logging.debug("original_peer_guid is %s" % original_peer_guid)
         bucket_id = indexname + "_" + original_peer_guid + "_" + bucket_id_list[0]
     else:
-        print("# This means it's a replicated bucket, we'll grab the GUID from the b name")
+        logging.debug("# This means it's a replicated bucket, we'll grab the GUID from the b name")
         # This means it's a replicated bucket, we'll grab the GUID from the b name
         clustered_flag = "1"
         bucket_id = indexname+"_"+bucket_id_list[1]+"_"+bucket_id_list[0]
         original_peer_guid = bucket_id_list[1]
 
     # print the bucket_id
-    print("bucket_id is %s" % bucket_id)
+    logging.debug("bucket_id is %s" % bucket_id)
 
     # define the bucket tgz file path
     bucket_tgz = bucket + '.tgz'
@@ -348,10 +342,10 @@ if __name__ == "__main__":
         bucket_is_archived = False
 
     if bucket_is_archived:
-        print("This bucket has been archived already, nothing to do and exit 0")
+        logging.info("This bucket has been archived already, nothing to do and exit 0")
         sys.exit(0)
     else:
-        print("This bucket has not been archived yet, proceed to archiving now")
+        logging.info("This bucket has not been archived yet, proceed to archiving now")
 
     # Create a tgz from tbe bucket, and sleep a few seconds to let time for the file closure
     make_tarfile(bucket_tgz, bucket)
@@ -362,15 +356,15 @@ if __name__ == "__main__":
         size = os.path.getsize(bucket_tgz) 
     
     except OSError : 
-        print("Path '%s' does not exists or is inaccessible" %bucket_tgz) 
+        logging.error("Path '%s' does not exists or is inaccessible" %bucket_tgz) 
         sys.exit() 
     
     # Print the size (in bytes) 
     # of specified path  
-    print("Size (In bytes) of '% s':" % bucket_tgz, size)    
+    logging.debug("Size (In bytes) of '% s':" % bucket_tgz, size)    
 
     # Print the peer name
-    print("the peer name is %s" %peer_name)
+    logging.debug("the peer name is %s" %peer_name)
 
     blob_name = indexname + "/" + bucket_id + ".tgz"
     blob = BlobClient.from_connection_string(conn_str=AZ_BLOB_CONNECTION_STRING, container_name=AZ_BLOB_CONTAINER, blob_name=blob_name)
@@ -386,7 +380,8 @@ if __name__ == "__main__":
             az_upload_success = False
 
     if az_upload_success:
-        print('Archive upload to Azure blob storage successful for bucket ' + bucket)
+        logging.info('Archive upload to Azure blob storage successful for bucket ' + bucket)
+        logging.info('The bucket ' + bucket + ' has been archived successfully, sending an exit code 0 to Splunk now')
         if os.path.isfile(bucket_tgz):
             os.remove(bucket_tgz)
         # Create the record and update the AZ Storage table only if the upload was successful
@@ -398,7 +393,7 @@ if __name__ == "__main__":
         table_service.insert_entity(AZ_STORAGE_TABLE_NAME, record)
         sys.exit(0)
     else:
-        print('Archive upload to Azure blob storage has failed for bucket ' + bucket)
+        logging.error('Archive upload to Azure blob storage has failed for bucket ' + bucket)
         print(sys.exc_info()[1])
         if os.path.isfile(bucket_tgz):
             os.remove(bucket_tgz)
