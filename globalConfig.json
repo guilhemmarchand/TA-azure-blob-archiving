@@ -36,6 +36,31 @@
                             "options": {
                                 "display": true
                             }
+                        },
+                        {
+                            "type": "singleSelect",
+                            "label": "Azure blob structure",
+                            "field": "AZ_BLOB_STRUCTURE",
+                            "defaultValue": "index_name",
+                            "help": "Choose the Azure blob structure logic to be used when performing the buckets archiving (defaults to the name of the index being archived)",
+                            "required": true,
+                            "options": {
+                                "disableSearch": true,
+                                "autoCompleteFields": [
+                                    {
+                                        "value": "index",
+                                        "label": "index name"
+                                    },
+                                    {
+                                        "value": "index_year",
+                                        "label": "index name / year (digit)"
+                                    },
+                                    {
+                                        "value": "index_year_month",
+                                        "label": "index name / year (digit) / month (digit)"
+                                    }
+                                ]
+                            }
                         }
                     ],
                     "title": "Azure2Blob settings"

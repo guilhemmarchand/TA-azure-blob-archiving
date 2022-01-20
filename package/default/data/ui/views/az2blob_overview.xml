@@ -1,4 +1,4 @@
-<dashboard theme="dark">
+<dashboard theme="dark" hideEdit="true">
   <label>Az2Blob - Overview</label>
   <search id="baseSearch">
     <query>| savedsearch "Az2Blob - get AZ Table" | eval time=strptime(Timestamp, "%Y-%m-%dT%H:%M:%S.%6N"), _time=strftime(time, "%s") | where _time&gt;=relative_time(now(), "-7d") | stats c by StorageAccount, PartitionKey, indexname</query>

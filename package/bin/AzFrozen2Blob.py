@@ -20,6 +20,8 @@ import tarfile
 import socket
 import configparser
 import contextlib
+import datetime
+import json
 import logging
 
 from azure.storage.blob import BlobClient, BlobServiceClient
@@ -92,7 +94,7 @@ if is_windows:
     local_app_settings_initfile = APP + "\\default\\azure2blob_settings.conf"
 else:
     default_app_settings_initfile = APP + "/default/azure2blob_settings.conf"
-    local_app_settings_initfile = APP + "/local/azure2blob.conf"
+    local_app_settings_initfile = APP + "/local/azure2blob_settings.conf"
 
 # First read default config
 config.read(default_app_settings_initfile)
@@ -101,6 +103,7 @@ config.read(default_app_settings_initfile)
 AZ_BLOB_CONNECTION_STRING = config.get("azure2blob", "AZ_BLOB_CONNECTION_STRING")
 AZ_STORAGE_TABLE_NAME = config.get("azure2blob", "AZ_STORAGE_TABLE_NAME")
 AZ_BLOB_CONTAINER = config.get("azure2blob", "AZ_BLOB_CONTAINER")
+AZ_BLOB_STRUCTURE = config.get("azure2blob", "AZ_BLOB_STRUCTURE")
 AZ_LOGGING_LEVEL = config.get("logging", "loglevel")
 
 # Check config exists
@@ -111,17 +114,33 @@ if not os.path.isfile(local_app_settings_initfile):
 
 # If app has a local setting file, try to read logging
 if os.path.isfile(local_app_settings_initfile):
+    config.read(local_app_settings_initfile)
+
     try:
-        config.read(local_app_settings_initfile)
         AZ_BLOB_CONNECTION_STRING = config.get("azure2blob", "AZ_BLOB_CONNECTION_STRING")
-        AZ_STORAGE_TABLE_NAME = config.get("azure2blob", "AZ_STORAGE_TABLE_NAME")
-        AZ_BLOB_CONTAINER = config.get("azure2blob", "AZ_BLOB_CONTAINER")
-        AZ_LOGGING_LEVEL = config.get("logging", "loglevel")
     except Exception as e:
         AZ_BLOB_CONNECTION_STRING = AZ_BLOB_CONNECTION_STRING
+
+    try:
+        AZ_STORAGE_TABLE_NAME = config.get("azure2blob", "AZ_STORAGE_TABLE_NAME")
+    except Exception as e:
         AZ_STORAGE_TABLE_NAME = AZ_STORAGE_TABLE_NAME
+
+    try:
+        AZ_BLOB_CONTAINER = config.get("azure2blob", "AZ_BLOB_CONTAINER")
+    except Exception as e:
         AZ_BLOB_CONTAINER = AZ_BLOB_CONTAINER
+
+    try:
+        AZ_BLOB_STRUCTURE = config.get("azure2blob", "AZ_BLOB_STRUCTURE")
+    except Exception as e:
+        AZ_BLOB_STRUCTURE = AZ_BLOB_STRUCTURE
+
+    try:
+        AZ_LOGGING_LEVEL = config.get("logging", "loglevel")
+    except Exception as e:
         AZ_LOGGING_LEVEL = AZ_LOGGING_LEVEL
+
 
 # finally set logging level
 log.setLevel(AZ_LOGGING_LEVEL)
@@ -159,13 +178,6 @@ if container_was_created:
 
 # Create the AZ table service
 table_service = TableService(connection_string=AZ_BLOB_CONNECTION_STRING)
-
-# Create the AZ table if necessary
-try:
-    table_service.create_table(AZ_STORAGE_TABLE_NAME)
-    logging.info("The Azure Storage table " + str(AZ_STORAGE_TABLE_NAME) + " does not exist yet, and has been created automatically")
-except Exception as e:
-    logging.info("Assuming the The Azure Storage table " + str(AZ_STORAGE_TABLE_NAME) + " has been created already")
 
 #
 # FUNCTIONS
@@ -333,7 +345,7 @@ if __name__ == "__main__":
             record = table_service.get_entity(AZ_STORAGE_TABLE_NAME, AZ_BLOB_CONTAINER, bucket_id, select='status', timeout=60)
             record_status = record.status
             record_found = True
-    except:
+    except Exception as e:
         record_found = False
 
     if record_found and record_status in "success":
@@ -342,10 +354,10 @@ if __name__ == "__main__":
         bucket_is_archived = False
 
     if bucket_is_archived:
-        logging.info("This bucket has been archived already, nothing to do and exit 0")
+        logging.info("The bucket " + bucket_id + " has been archived already, nothing to do and will exit 0")        
         sys.exit(0)
     else:
-        logging.info("This bucket has not been archived yet, proceed to archiving now")
+        logging.info("The bucket " + bucket_id + " has not been archived yet, proceed to archiving now")
 
     # Create a tgz from tbe bucket, and sleep a few seconds to let time for the file closure
     make_tarfile(bucket_tgz, bucket)
@@ -366,7 +378,16 @@ if __name__ == "__main__":
     # Print the peer name
     logging.debug("the peer name is %s" %peer_name)
 
-    blob_name = indexname + "/" + bucket_id + ".tgz"
+    # Define the blob structure and name
+    if AZ_BLOB_STRUCTURE == 'index':
+        blob_name = indexname + "/" + bucket_id + ".tgz"
+    elif AZ_BLOB_STRUCTURE == 'index_year':
+        blob_name = indexname + "/" + str(datetime.datetime.now().date().strftime("%Y")) + "/" + bucket_id + ".tgz"
+    elif AZ_BLOB_STRUCTURE == 'index_year_month':
+        blob_name = indexname + "/" + str(datetime.datetime.now().date().strftime("%Y")) + "/" + str(datetime.datetime.now().date().strftime("%m")) + "/" + bucket_id + ".tgz"
+    else:
+        blob_name = indexname + "/" + bucket_id + ".tgz"
+
     blob = BlobClient.from_connection_string(conn_str=AZ_BLOB_CONNECTION_STRING, container_name=AZ_BLOB_CONTAINER, blob_name=blob_name)
 
     # Finally upload to the blob storage, return the results and exit with the error code
