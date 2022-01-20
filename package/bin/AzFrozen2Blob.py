@@ -24,10 +24,6 @@ import datetime
 import json
 import logging
 
-from azure.storage.blob import BlobClient, BlobServiceClient
-from azure.cosmosdb.table.tableservice import TableService
-from azure.cosmosdb.table.models import Entity
-
 # Verify SPLUNK_HOME environment variable is available, the script is expected to be launched by Splunk which
 #  will set this for debugging or manual run, please set this variable manually
 try:
@@ -40,6 +36,11 @@ SPLUNK_HOME = os.environ['SPLUNK_HOME']
 
 # append libs
 sys.path.append(os.path.join(SPLUNK_HOME, 'etc', 'apps', 'TA-azure-blob-archiving', 'lib'))
+
+# import Azure libs
+from azure.storage.blob import BlobClient, BlobServiceClient
+from azure.cosmosdb.table.tableservice import TableService
+from azure.cosmosdb.table.models import Entity
 
 # set logging
 filehandler = logging.FileHandler(SPLUNK_HOME + "/var/log/splunk/azure2blob_azfrozen2blob.log", 'a')
