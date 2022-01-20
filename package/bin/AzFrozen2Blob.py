@@ -401,8 +401,8 @@ if __name__ == "__main__":
             az_upload_success = False
 
     if az_upload_success:
-        logging.info('Archive upload to Azure blob storage successful for bucket ' + bucket)
-        logging.info('The bucket ' + bucket + ' has been archived successfully, sending an exit code 0 to Splunk now')
+        logging.info('Archive upload to Azure blob storage successful for bucket ' + bucket_id)
+        logging.info('The bucket ' + bucket_id + ' has been archived successfully, sending an exit code 0 to Splunk now')
         if os.path.isfile(bucket_tgz):
             os.remove(bucket_tgz)
         # Create the record and update the AZ Storage table only if the upload was successful
@@ -414,7 +414,7 @@ if __name__ == "__main__":
         table_service.insert_entity(AZ_STORAGE_TABLE_NAME, record)
         sys.exit(0)
     else:
-        logging.error('Archive upload to Azure blob storage has failed for bucket ' + bucket)
+        logging.error('Archive upload to Azure blob storage has failed for bucket ' + bucket_id)
         print(sys.exc_info()[1])
         if os.path.isfile(bucket_tgz):
             os.remove(bucket_tgz)
