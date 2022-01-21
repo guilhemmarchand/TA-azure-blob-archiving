@@ -4,6 +4,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import os
 import sys
+from textwrap import indent
 import splunk
 import splunk.entity
 import time
@@ -203,7 +204,7 @@ class AzRestoreBatch(StreamingCommand):
                             'target_directory': subrecord.get("target_directory"),
                         }
                         logging.debug("request_data=" + json.dumps(request_data, indent=1))
-                        response = requests.post(endpointUrl, auth = HTTPBasicAuth(remote_username, remote_password), data=request_data,
+                        response = requests.post(endpointUrl, auth = HTTPBasicAuth(remote_username, remote_password), data=json.dumps(request_data, indent=1),
                                                 verify=False)
                         if response.status_code not in (200, 201, 204):
                             logging.error(
@@ -229,7 +230,7 @@ class AzRestoreBatch(StreamingCommand):
                             'target_directory': subrecord.get("target_directory"),
                         }
                         logging.debug("request_data=" + json.dumps(request_data, indent=1))
-                        response = requests.post(endpointUrl, headers=headers, data=request_data,
+                        response = requests.post(endpointUrl, headers=headers, data=json.dumps(request_data, indent=1),
                                                 verify=False)
                         if response.status_code not in (200, 201, 204):
                             logging.error(
