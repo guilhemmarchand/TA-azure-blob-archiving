@@ -296,6 +296,6 @@ class AzExportToTable(StreamingCommand):
             + '\", processed_count=\"' + str(processed_count) \
             + '\", user=\"' + str(user) + '\"'
         logging.info(raw_kv_message)
-        yield {'_time': time.time(), '_raw': json.dumps(raw, indent=4), 'result_count': str(results_count), 'process_count': str(processed_count)}
+        yield {'_time': time.time(), '_raw': json.dumps(raw, indent=4)}
 
 dispatch(AzExportToTable, sys.argv, sys.stdin, sys.stdout, __name__)

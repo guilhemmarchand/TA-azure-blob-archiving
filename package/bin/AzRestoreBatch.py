@@ -7,8 +7,11 @@ import sys
 import splunk
 import splunk.entity
 import time
+import re
 import json
 import socket
+import requests
+from requests.auth import HTTPBasicAuth
 import logging
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -91,6 +94,32 @@ class AzRestoreBatch(StreamingCommand):
                                             namespace='TA-azure-blob-archiving', sessionKey=session_key, owner='-')
         splunkd_port = entity['mgmtHostPort']
 
+        # Get conf
+        conf_file = "azure2blob_settings"
+        confs = self.service.confs[str(conf_file)]
+        storage_passwords = self.service.storage_passwords
+        remote_username = None
+        remote_password = None
+        for stanza in confs:
+            if stanza.name == "azure2blob":
+                for stanzakey, stanzavalue in stanza.content.items():
+                    if stanzakey == "remote_username":
+                        remote_username = stanzavalue
+
+        credential_realm = '__REST_CREDENTIAL__#TA-azure-blob-archiving#configs/conf-azure2blob_settings'
+        remote_password_rawvalue = ""
+
+        for credential in storage_passwords:
+            if credential.content.get('realm') == str(credential_realm):
+                remote_password_rawvalue = remote_password_rawvalue + str(credential.content.clear_password)
+
+        # extract a clean json object
+        remote_password_rawvalue_match = re.search('\{\"remote_password\":\s*\"(.*)\"\}', remote_password_rawvalue)
+        if remote_password_rawvalue_match:
+            remote_password = remote_password_rawvalue_match.group(1)
+        else:
+            remote_password = None
+
         # host_local
         host_local = socket.gethostname()
 
@@ -133,6 +162,8 @@ class AzRestoreBatch(StreamingCommand):
 
         # to report processed messages
         processed_count = 0
+        successes_count = 0
+        failures_count = 0
 
         # process by chunk
         chunks = [records_list[i:i + 500] for i in range(0, len(records_list), 500)]
@@ -158,6 +189,59 @@ class AzRestoreBatch(StreamingCommand):
                     else:
                         logging.debug("Target peer is local host, restore will be attempted locally")
 
+                    # Perform the restore request
+                    if remote_request:
+
+                        endpointUrl = 'https://' + str(subrecord_target_peer) + ':' +\
+                            str(splunkd_port) + '/services/ta_azure_blob_archiving/v1/restore'
+                        headers = {
+                            'Authorization': 'Splunk %s' % session_key,
+                            'Content-Type': 'application/json'}
+                        request_data = {
+                            'splunk_rebuild': subrecord.get("splunk_rebuild"),
+                            'blob_name': subrecord.get("blob_name"),
+                            'target_directory': subrecord.get("target_directory"),
+                        }
+                        logging.debug("request_data=" + json.dumps(request_data, indent=1))
+                        response = requests.post(endpointUrl, auth = HTTPBasicAuth(remote_username, remote_password), data=request_data,
+                                                verify=False)
+                        if response.status_code not in (200, 201, 204):
+                            logging.error(
+                                'Restore operation has failed!. url={}, data={}, HTTP Error={}, '
+                                'content={}'.format(endpointUrl, record, response.status_code, response.text))
+                            failures_count+=1
+                        else:
+                            logging.info(
+                                'Restore operation was successful. url={}, data={}, HTTP Error={}, '
+                                'content={}'.format(endpointUrl, record, response.status_code, response.text))
+                            successes_count+=1
+
+                    else:
+
+                        endpointUrl = 'https://localhost:' +\
+                            str(splunkd_port) + '/services/ta_azure_blob_archiving/v1/restore'
+                        headers = {
+                            'Authorization': 'Splunk %s' % session_key,
+                            'Content-Type': 'application/json'}
+                        request_data = {
+                            'splunk_rebuild': subrecord.get("splunk_rebuild"),
+                            'blob_name': subrecord.get("blob_name"),
+                            'target_directory': subrecord.get("target_directory"),
+                        }
+                        logging.debug("request_data=" + json.dumps(request_data, indent=1))
+                        response = requests.post(endpointUrl, headers=headers, data=request_data,
+                                                verify=False)
+                        if response.status_code not in (200, 201, 204):
+                            logging.error(
+                                'Restore operation has failed!. url={}, data={}, HTTP Error={}, '
+                                'content={}'.format(endpointUrl, record, response.status_code, response.text))
+                            failures_count+=1
+                        else:
+                            logging.info(
+                                'Restore operation was successful. url={}, data={}, HTTP Error={}, '
+                                'content={}'.format(endpointUrl, record, response.status_code, response.text))
+                            successes_count+=1
+
                 except Exception as e:
                     logging.error("Error while processing restore request with exception: " + str(e))
                     sys.exit(1)
@@ -169,13 +253,17 @@ class AzRestoreBatch(StreamingCommand):
         raw = {
             "results_count": str(results_count),
             "processed_count": str(processed_count),
+            "successes_count": str(successes_count),
+            "failures_count": str(failures_count),
             "user": str(user)
         }
 
         raw_kv_message = 'results_count=\"' + str(results_count) \
             + '\", processed_count=\"' + str(processed_count) \
+            + '\", successes_count=\"' + str(successes_count) \
+            + '\", failures_count=\"' + str(failures_count) \
             + '\", user=\"' + str(user) + '\"'
         logging.info(raw_kv_message)
-        yield {'_time': time.time(), '_raw': json.dumps(raw, indent=4), 'result_count': str(results_count), 'process_count': str(processed_count)}
+        yield {'_time': time.time(), '_raw': json.dumps(raw, indent=4)}
 
 dispatch(AzRestoreBatch, sys.argv, sys.stdin, sys.stdout, __name__)

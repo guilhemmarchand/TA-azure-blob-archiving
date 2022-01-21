@@ -82,9 +82,9 @@ class AzRestore_v1(azure2blob_rest_handler.RESTHandler):
             response = {
                 "describe": "This endpoint will restore a bucket from Azure Blob storage, it requires a POST call with the following information:",
                 "options": [ {
-                    "mode": "The run mode, accepted values are: simulate | live, simulate attempts to download the blob file and simulate a restoration, live performs the actual restoration",
+                    "splunk_rebuild": "If the bucket should be rebuilt upon its extraction, valid options are: true | false",
                     "blob_name": "The blob name of the bucket, as stored in Azure",
-                    "target_directory": "The Splunk Thawte target directory"
+                    "target_directory": "The Splunk Thawte target directory",
                 }]
             }
 

@@ -65,6 +65,28 @@
                                     }
                                 ]
                             }
+                        },
+                        {
+                            "type": "text",
+                            "label": "Remote user name for restore",
+                            "help": "The Splunk user to be used when performing bucket restore operations to remote peers",
+                            "field": "remote_username",
+                            "required": false,
+                            "defaultValue": "admin",
+                            "options": {
+                                "display": true
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "label": "Remote password for restore",
+                            "help": "The Splunk password to be used when performing bucket restore operations to remote peers",
+                            "field": "remote_password",
+                            "required": false,
+                            "options": {
+                                "display": true
+                            },
+                            "encrypted": true
                         }
                     ],
                     "title": "Azure2Blob settings"
