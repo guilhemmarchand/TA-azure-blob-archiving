@@ -11,6 +11,7 @@
 	<collection label="Az2blob logging">
 		<saved name="Az2Blob - AzFrozen2blob logs" />
 		<saved name="Az2Blob - AzRestore logs" />
+		<saved name="Az2Blob - AzRestoreBatch logs" />
 		<saved name="Az2Blob - AzExportTable logs" />
 		<saved name="Az2Blob - AzPurgeBlob logs" />    
 		<saved name="Az2Blob - azGetTable logs" />
