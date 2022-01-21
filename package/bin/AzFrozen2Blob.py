@@ -386,9 +386,15 @@ if __name__ == "__main__":
     if AZ_BLOB_STRUCTURE == 'index':
         blob_name = indexname + "/" + bucket_id + ".tgz"
     elif AZ_BLOB_STRUCTURE == 'index_year':
-        blob_name = indexname + "/" + str(datetime.datetime.now().date().strftime("%Y")) + "/" + bucket_id + ".tgz"
+        blob_name = indexname + "/" + str(datetime.datetime.now().date().strftime("%Y")) +\
+            "/" + bucket_id + ".tgz"
     elif AZ_BLOB_STRUCTURE == 'index_year_month':
-        blob_name = indexname + "/" + str(datetime.datetime.now().date().strftime("%Y")) + "/" + str(datetime.datetime.now().date().strftime("%m")) + "/" + bucket_id + ".tgz"
+        blob_name = indexname + "/" + str(datetime.datetime.now().date().strftime("%Y")) +\
+            "/" + str(datetime.datetime.now().date().strftime("%m")) + "/" + bucket_id + ".tgz"
+    elif AZ_BLOB_STRUCTURE == 'index_year_month_day':
+        blob_name = indexname + "/" + str(datetime.datetime.now().date().strftime("%Y")) +\
+            "/" + str(datetime.datetime.now().date().strftime("%m")) +\
+            "/" + str(datetime.datetime.now().date().strftime("%d")) + "/" + bucket_id + ".tgz"
     else:
         blob_name = indexname + "/" + bucket_id + ".tgz"
 

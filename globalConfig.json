@@ -58,6 +58,10 @@
                                     {
                                         "value": "index_year_month",
                                         "label": "index name / year (digit) / month (digit)"
+                                    },
+                                    {
+                                        "value": "index_year_month_day",
+                                        "label": "index name / year (digit) / month (digit) / day (digit)"
                                     }
                                 ]
                             }
