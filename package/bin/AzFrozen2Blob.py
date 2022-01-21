@@ -34,8 +34,11 @@ except KeyError:
     sys.exit(1)
 SPLUNK_HOME = os.environ['SPLUNK_HOME']
 
-# append libs
-sys.path.append(os.path.join(SPLUNK_HOME, 'etc', 'apps', 'TA-azure-blob-archiving', 'lib'))
+# append libs, handle if the app is running a standalone instance or clustered
+if os.path.exists(os.path.join(SPLUNK_HOME, 'etc', 'apps', 'TA-azure-blob-archiving', 'lib')):
+    sys.path.append(os.path.join(SPLUNK_HOME, 'etc', 'apps', 'TA-azure-blob-archiving', 'lib'))
+elif os.path.exists(os.path.join(SPLUNK_HOME, 'etc', 'slave-apps', 'TA-azure-blob-archiving', 'lib')):
+    sys.path.append(os.path.join(SPLUNK_HOME, 'etc', 'slave-apps', 'TA-azure-blob-archiving', 'lib'))
 
 # import Azure libs
 from azure.storage.blob import BlobClient, BlobServiceClient
