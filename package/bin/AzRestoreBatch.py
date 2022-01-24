@@ -47,8 +47,14 @@ class AzRestoreBatch(StreamingCommand):
     splunk_rebuild = Option(
         doc='''
         **Syntax:** **splunk_rebuild=****
-        **Description:** Run the Splunk rebuild upoon restoration of the bucket.''',
+        **Description:** Run the Splunk rebuild upon restoration of the bucket.''',
         require=False, default=True, validate=validators.Match("dedup", r"^(True|False)$"))
+
+    chunk_size = Option(
+        doc='''
+        **Syntax:** **chunk_size=****
+        **Description:** Specify the number of buckets to be concurrently restored, defaults to 10.''',
+        require=False, default=10, validate=validators.Match("dedup", r"^\d*$"))
 
     field_blob_name = Option(
         doc='''
@@ -167,7 +173,7 @@ class AzRestoreBatch(StreamingCommand):
         failures_count = 0
 
         # process by chunk
-        chunks = [records_list[i:i + 500] for i in range(0, len(records_list), 500)]
+        chunks = [records_list[i:i + int(self.chunk_size)] for i in range(0, len(records_list), int(self.chunk_size))]
         for chunk in chunks:
             chunk_len = len(chunk)
 
