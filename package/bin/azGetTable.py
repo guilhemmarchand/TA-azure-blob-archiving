@@ -113,8 +113,7 @@ class AzGetTable(GeneratingCommand):
                         AZ_BLOB_CONNECTION_STRING = stanzavalue
 
         # logging debug
-        logging.debug("AZ_BLOB_CONTAINER is: " + str(AZ_BLOB_CONTAINER))
-        logging.debug("AZ_BLOB_CONNECTION_STRING is: " + str(AZ_BLOB_CONNECTION_STRING))
+        logging.debug("AZ_BLOB_CONTAINER=\"{}\"".format(str(AZ_BLOB_CONTAINER)))
 
         # do not proceed of the connection string is not configured yet
         if str(AZ_BLOB_CONNECTION_STRING) == 'connection_string_to_the_blob_storage':
@@ -125,7 +124,7 @@ class AzGetTable(GeneratingCommand):
         try:
             table_service = TableService(connection_string=AZ_BLOB_CONNECTION_STRING)
         except Exception as e:
-            logging.error("Failed to establish the service to the Azure table with exception=" + str(e))
+            logging.error("Failed to establish the service to the Azure table with exception=\"{}\"".format(str(e)))
 
         #
         # Main start

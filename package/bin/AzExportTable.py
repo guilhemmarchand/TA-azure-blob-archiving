@@ -74,12 +74,6 @@ class AzExportToTable(StreamingCommand):
         **Description:** field name containing the value for the value for RowKey.''',
         require=True)
 
-    field_timestamp = Option(
-        doc='''
-        **Syntax:** **field_timestamp=****
-        **Description:** field name containing the value for the value for Timestamp.''',
-        require=True)
-
     field_blob_name = Option(
         doc='''
         **Syntax:** **field_blob_name=****
@@ -217,7 +211,6 @@ class AzExportToTable(StreamingCommand):
             Table = str(splrecord[self.field_table])
             PartitionKey = str(splrecord[self.field_partitionkey])
             RowKey = str(splrecord[self.field_row_key])
-            Timestamp = str(splrecord[self.field_timestamp])
             blob_name = str(splrecord[self.field_blob_name])
             bucket_id = str(splrecord[self.field_bucket_id])
             original_bucket_name = str(splrecord[self.field_original_bucket_name])
@@ -236,7 +229,6 @@ class AzExportToTable(StreamingCommand):
                         "Table": str(Table),
                         "PartitionKey": str(PartitionKey),
                         "RowKey": str(RowKey),
-                        "Timestamp": str(Timestamp),
                         "blob_name": str(blob_name),
                         "bucket_id": str(bucket_id),
                         "original_bucket_name": str(original_bucket_name),
@@ -266,6 +258,7 @@ class AzExportToTable(StreamingCommand):
 
         # to report processed messages
         processed_count = 0
+        success_count = 0
 
         # process by chunk
         chunks = [records_list[i:i + 500] for i in range(0, len(records_list), 500)]
@@ -277,10 +270,10 @@ class AzExportToTable(StreamingCommand):
                 try:
                     logging.debug("Inserting record in table=\"" + str(json.dumps(subrecord, indent=1)))
                     table_service.insert_entity(self.table_target, subrecord)
+                    success_count+=1
 
                 except Exception as e:
                     logging.error("Error inserting record in table with exception: " + str(e))
-                    sys.exit(1)
 
             # processed count
             processed_count = processed_count + chunk_len
@@ -289,6 +282,7 @@ class AzExportToTable(StreamingCommand):
         raw = {
             "results_count": str(results_count),
             "processed_count": str(processed_count),
+            "success_count": str(success_count),
             "user": str(user)
         }
 

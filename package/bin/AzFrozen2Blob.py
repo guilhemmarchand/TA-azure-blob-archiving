@@ -108,6 +108,7 @@ AZ_BLOB_CONNECTION_STRING = config.get("azure2blob", "AZ_BLOB_CONNECTION_STRING"
 AZ_STORAGE_TABLE_NAME = config.get("azure2blob", "AZ_STORAGE_TABLE_NAME")
 AZ_BLOB_CONTAINER = config.get("azure2blob", "AZ_BLOB_CONTAINER")
 AZ_BLOB_STRUCTURE = config.get("azure2blob", "AZ_BLOB_STRUCTURE")
+AZ_COMPRESS = config.get("azure2blob", "AZ_COMPRESS")
 AZ_LOGGING_LEVEL = config.get("logging", "loglevel")
 
 # Check config exists
@@ -141,6 +142,11 @@ if os.path.isfile(local_app_settings_initfile):
         AZ_BLOB_STRUCTURE = AZ_BLOB_STRUCTURE
 
     try:
+        AZ_COMPRESS = config.get("azure2blob", "AZ_COMPRESS")
+    except Exception as e:
+        AZ_COMPRESS = AZ_COMPRESS
+
+    try:
         AZ_LOGGING_LEVEL = config.get("logging", "loglevel")
     except Exception as e:
         AZ_LOGGING_LEVEL = AZ_LOGGING_LEVEL
@@ -148,6 +154,9 @@ if os.path.isfile(local_app_settings_initfile):
 
 # finally set logging level
 log.setLevel(AZ_LOGGING_LEVEL)
+
+# Summarize config
+logging.info("configuration summary, AZ_STORAGE_TABLE_NAME=\"{}\", AZ_BLOB_CONTAINER=\"{}\", AZ_BLOB_STRUCTURE=\"{}\", AZ_COMPRESS=\"{}\"".format(AZ_STORAGE_TABLE_NAME, AZ_BLOB_CONTAINER, AZ_BLOB_STRUCTURE, AZ_COMPRESS))
 
 # do not proceed of the connection string is not configured yet
 if str(AZ_BLOB_CONNECTION_STRING) == 'connection_string_to_the_blob_storage':
@@ -202,9 +211,18 @@ def getHostName():
     return localHostname
 
 
-def make_tarfile(output_filename, source_dir):
-    with tarfile.open(output_filename, "w:gz") as tar:
+# Create the tar file
+def make_tarfile(output_filename, source_dir, mode):
+    with tarfile.open(output_filename, mode) as tar:
         tar.add(source_dir, arcname=os.path.basename(source_dir))
+
+
+# Minimal integrity verification
+def check_tarfile(filename):
+
+    with tarfile.open(filename, 'r') as tar:
+        archive_content = tar.getnames()
+    return archive_content
 
 
 # For new style buckets (v4.2+), we can remove all files except for the rawdata.
@@ -333,9 +351,6 @@ if __name__ == "__main__":
     # print the bucket_id
     logging.debug("bucket_id is %s" % bucket_id)
 
-    # define the bucket tgz file path
-    bucket_tgz = bucket + '.tgz'
-
     # Research in the Azure Table if this entity exists and if its archiving status is success
     # If the entity complies with this, archiving is not required and this bucket_id was already archived on this peer or another peer
     # Otherwise, continue.
@@ -358,74 +373,169 @@ if __name__ == "__main__":
         bucket_is_archived = False
 
     if bucket_is_archived:
-        logging.info("The bucket " + bucket_id + " has been archived already, nothing to do and will exit 0")        
+        logging.info("The bucket=\"{}\", bucket_id=\"{}\" has been archived already, nothing to do and will exit 0".format(str(bucket), str(bucket_id)))
         sys.exit(0)
     else:
-        logging.info("The bucket " + bucket_id + " has not been archived yet, proceed to archiving now")
+        logging.info("The bucket=\"{}\", bucket_id=\"{}\" has not been archived yet, proceed to archiving now".format(str(bucket), str(bucket_id)))
 
-    # Create a tgz from tbe bucket, and sleep a few seconds to let time for the file closure
-    make_tarfile(bucket_tgz, bucket)
-    time.sleep(5)
+    # Proceed depending on the selected options
+    if AZ_COMPRESS == 1:
 
-    # Get tgz size in bytes
-    try : 
-        size = os.path.getsize(bucket_tgz) 
-    
-    except OSError : 
-        logging.error("Path '%s' does not exists or is inaccessible" %bucket_tgz) 
-        sys.exit() 
-    
-    # Print the size (in bytes) 
-    # of specified path  
-    logging.debug("Size (In bytes) of '% s':" % bucket_tgz, size)    
+        logging.info("Archives will be created as gz compressed tar files")
+        # define the bucket tgz file path
+        bucket_tarfile = bucket + '.tgz'
 
-    # Print the peer name
-    logging.debug("the peer name is %s" %peer_name)
+        # Create a tgz from tbe bucket, and sleep a few seconds to let time for the file closure
+        make_tarfile(bucket_tarfile, bucket, "w:gz")
+        time.sleep(5)
 
-    # Define the blob structure and name
-    if AZ_BLOB_STRUCTURE == 'index':
-        blob_name = indexname + "/" + bucket_id + ".tgz"
-    elif AZ_BLOB_STRUCTURE == 'index_year':
-        blob_name = indexname + "/" + str(datetime.datetime.now().date().strftime("%Y")) +\
-            "/" + bucket_id + ".tgz"
-    elif AZ_BLOB_STRUCTURE == 'index_year_month':
-        blob_name = indexname + "/" + str(datetime.datetime.now().date().strftime("%Y")) +\
-            "/" + str(datetime.datetime.now().date().strftime("%m")) + "/" + bucket_id + ".tgz"
-    elif AZ_BLOB_STRUCTURE == 'index_year_month_day':
-        blob_name = indexname + "/" + str(datetime.datetime.now().date().strftime("%Y")) +\
-            "/" + str(datetime.datetime.now().date().strftime("%m")) +\
-            "/" + str(datetime.datetime.now().date().strftime("%d")) + "/" + bucket_id + ".tgz"
-    else:
-        blob_name = indexname + "/" + bucket_id + ".tgz"
-
-    blob = BlobClient.from_connection_string(conn_str=AZ_BLOB_CONNECTION_STRING, container_name=AZ_BLOB_CONTAINER, blob_name=blob_name)
-
-    # Finally upload to the blob storage, return the results and exit with the error code
-    az_upload_success = False
-
-    with open(bucket_tgz, "rb") as data:
+        # Check the tar file integrity
         try:
-            blob.upload_blob(data)
-            az_upload_success = True
-        except:
-            az_upload_success = False
+            archive_content = check_tarfile(bucket_tarfile)
+            logging.info("tar file integrity check is successfull with archive_content=\"{}\"".format(str(archive_content)))
+        except Exception as e:
+            logging.error("tar file integrity check failed with exception=\"{}\"".format(str(e)))
+            sys.exit(1)
 
-    if az_upload_success:
-        logging.info('Archive upload to Azure blob storage successful for bucket ' + bucket_id)
-        logging.info('The bucket ' + bucket_id + ' has been archived successfully, sending an exit code 0 to Splunk now')
-        if os.path.isfile(bucket_tgz):
-            os.remove(bucket_tgz)
-        # Create the record and update the AZ Storage table only if the upload was successful
-        record = {'PartitionKey': AZ_BLOB_CONTAINER, 'RowKey': bucket_id, 'blob_name': blob_name,                
-                'bucket_id': bucket_id, 'original_bucket_name': bucket_name,
-                'original_peer_name': peer_name, 'original_peer_guid': original_peer_guid,
-                'epoch_start': bucket_epoch_start, 'epoch_end': bucket_epoch_end, 'size_bytes': size,
-                'indexname': indexname, 'clustered_flag': clustered_flag, 'status': 'success'}
-        table_service.insert_entity(AZ_STORAGE_TABLE_NAME, record)
-        sys.exit(0)
+        # Get tgz size in bytes
+        try : 
+            size = os.path.getsize(bucket_tarfile) 
+        
+        except OSError : 
+            logging.error("Path '%s' does not exists or is inaccessible" %bucket_tarfile) 
+            sys.exit() 
+        
+        # Print the size (in bytes) 
+        # of specified path  
+        logging.debug("Size (In bytes) of '% s':" % bucket_tarfile, size)    
+
+        # Print the peer name
+        logging.debug("the peer name is %s" %peer_name)
+
+        # Define the blob structure and name
+        if AZ_BLOB_STRUCTURE == 'index':
+            blob_name = indexname + "/" + bucket_id + ".tgz"
+        elif AZ_BLOB_STRUCTURE == 'index_year':
+            blob_name = indexname + "/" + str(datetime.datetime.now().date().strftime("%Y")) +\
+                "/" + bucket_id + ".tgz"
+        elif AZ_BLOB_STRUCTURE == 'index_year_month':
+            blob_name = indexname + "/" + str(datetime.datetime.now().date().strftime("%Y")) +\
+                "/" + str(datetime.datetime.now().date().strftime("%m")) + "/" + bucket_id + ".tgz"
+        elif AZ_BLOB_STRUCTURE == 'index_year_month_day':
+            blob_name = indexname + "/" + str(datetime.datetime.now().date().strftime("%Y")) +\
+                "/" + str(datetime.datetime.now().date().strftime("%m")) +\
+                "/" + str(datetime.datetime.now().date().strftime("%d")) + "/" + bucket_id + ".tgz"
+        else:
+            blob_name = indexname + "/" + bucket_id + ".tgz"
+
+        # Finally upload to the blob storage, return the results and exit with the error code
+        with open(bucket_tarfile, "rb") as data:
+            try:
+                blob = BlobClient.from_connection_string(conn_str=AZ_BLOB_CONNECTION_STRING, container_name=AZ_BLOB_CONTAINER, blob_name=blob_name)
+                blob.upload_blob(data)
+
+                logging.info('bucket_id=\"{}\", bucket=\"{}\" has been archived to blob_name=\"{}\" successfully, sending an exit code 0 to Splunk now'.format(bucket, bucket_id, blob_name))
+                if os.path.isfile(bucket_tarfile):
+                    os.remove(bucket_tarfile)
+                # Create the record and update the AZ Storage table only if the upload was successful
+                record = {'PartitionKey': AZ_BLOB_CONTAINER, 'RowKey': bucket_id, 'blob_name': blob_name,                
+                        'bucket_id': bucket_id, 'original_bucket_name': bucket_name,
+                        'original_peer_name': peer_name, 'original_peer_guid': original_peer_guid,
+                        'epoch_start': bucket_epoch_start, 'epoch_end': bucket_epoch_end, 'size_bytes': size,
+                        'indexname': indexname, 'clustered_flag': clustered_flag, 'status': 'success'}
+
+                try:
+                    table_service.insert_entity(AZ_STORAGE_TABLE_NAME, record)
+                    logging.info("Azure table record=\"{}\" successfully inserted in the table=\"{}\"".format(json.dumps(record, indent=1), AZ_STORAGE_TABLE_NAME))
+                    sys.exit(0)
+                except Exception as e:
+                    logging.info("Azure table record=\"{}\" failed to be inserted in the table=\"{}\" with exception=\"{}\"".format(json.dumps(record, indent=1), AZ_STORAGE_TABLE_NAME), str(e))
+                    sys.exit(1)
+
+            except Exception as e:
+                logging.error('bucket_id=\"{}\", bucket=\"{}\" has failed to be archived to blob_name=\"{}\" with exception=\"{}\"'.format(bucket_id, bucket, blob_name, str(e)))
+                print(sys.exc_info()[1])
+                if os.path.isfile(bucket_tarfile):
+                    os.remove(bucket_tarfile)
+                sys.exit(1)
+
     else:
-        logging.error('Archive upload to Azure blob storage has failed for bucket ' + bucket_id)
-        print(sys.exc_info()[1])
-        if os.path.isfile(bucket_tgz):
-            os.remove(bucket_tgz)
-        sys.exit(1)
+
+        logging.info("Archives will be created as uncompressed tar files")
+        # define the bucket tgz file path
+        bucket_tarfile = bucket + '.tar'
+
+        # Create a tgz from tbe bucket, and sleep a few seconds to let time for the file closure
+        make_tarfile(bucket_tarfile, bucket, "w")
+        time.sleep(5)
+
+        # Check the tar file integrity
+        try:
+            archive_content = check_tarfile(bucket_tarfile)
+            logging.info("tar file content=\"{}\"".format(str(archive_content)))
+        except Exception as e:
+            logging.error("tar file integrity verification failed with exception=\"{}\"".format(str(e)))
+            sys.exit(1)
+
+        # Get tgz size in bytes
+        try : 
+            size = os.path.getsize(bucket_tarfile) 
+        
+        except OSError : 
+            logging.error("Path '%s' does not exists or is inaccessible" %bucket_tarfile) 
+            sys.exit() 
+        
+        # Print the size (in bytes) 
+        # of specified path  
+        logging.debug("Size (In bytes) of '% s':" % bucket_tarfile, size)    
+
+        # Print the peer name
+        logging.debug("the peer name is %s" %peer_name)
+
+        # Define the blob structure and name
+        if AZ_BLOB_STRUCTURE == 'index':
+            blob_name = indexname + "/" + bucket_id + ".tar"
+        elif AZ_BLOB_STRUCTURE == 'index_year':
+            blob_name = indexname + "/" + str(datetime.datetime.now().date().strftime("%Y")) +\
+                "/" + bucket_id + ".tar"
+        elif AZ_BLOB_STRUCTURE == 'index_year_month':
+            blob_name = indexname + "/" + str(datetime.datetime.now().date().strftime("%Y")) +\
+                "/" + str(datetime.datetime.now().date().strftime("%m")) + "/" + bucket_id + ".tar"
+        elif AZ_BLOB_STRUCTURE == 'index_year_month_day':
+            blob_name = indexname + "/" + str(datetime.datetime.now().date().strftime("%Y")) +\
+                "/" + str(datetime.datetime.now().date().strftime("%m")) +\
+                "/" + str(datetime.datetime.now().date().strftime("%d")) + "/" + bucket_id + ".tar"
+        else:
+            blob_name = indexname + "/" + bucket_id + ".tar"
+
+
+        # Finally upload to the blob storage, return the results and exit with the error code
+        with open(bucket_tarfile, "rb") as data:
+            try:
+                blob = BlobClient.from_connection_string(conn_str=AZ_BLOB_CONNECTION_STRING, container_name=AZ_BLOB_CONTAINER, blob_name=blob_name)
+                blob.upload_blob(data)
+
+                logging.info('bucket_id=\"{}\", bucket=\"{}\" has been archived to blob_name=\"{}\" successfully, sending an exit code 0 to Splunk now'.format(bucket, bucket_id, blob_name))
+                if os.path.isfile(bucket_tarfile):
+                    os.remove(bucket_tarfile)
+                # Create the record and update the AZ Storage table only if the upload was successful
+                record = {'PartitionKey': AZ_BLOB_CONTAINER, 'RowKey': bucket_id, 'blob_name': blob_name,                
+                        'bucket_id': bucket_id, 'original_bucket_name': bucket_name,
+                        'original_peer_name': peer_name, 'original_peer_guid': original_peer_guid,
+                        'epoch_start': bucket_epoch_start, 'epoch_end': bucket_epoch_end, 'size_bytes': size,
+                        'indexname': indexname, 'clustered_flag': clustered_flag, 'status': 'success'}
+
+                try:
+                    table_service.insert_entity(AZ_STORAGE_TABLE_NAME, record)
+                    logging.info("Azure table record=\"{}\" successfully inserted in the table=\"{}\"".format(json.dumps(record, indent=1), AZ_STORAGE_TABLE_NAME))
+                    sys.exit(0)
+                except Exception as e:
+                    logging.info("Azure table record=\"{}\" failed to be inserted in the table=\"{}\" with exception=\"{}\"".format(json.dumps(record, indent=1), AZ_STORAGE_TABLE_NAME), str(e))
+                    sys.exit(1)
+
+            except Exception as e:
+                logging.error('bucket_id=\"{}\", bucket=\"{}\" has failed to be archived to blob_name=\"{}\" with exception=\"{}\"'.format(bucket_id, bucket, blob_name, str(e)))
+                print(sys.exc_info()[1])
+                if os.path.isfile(bucket_tarfile):
+                    os.remove(bucket_tarfile)
+                sys.exit(1)

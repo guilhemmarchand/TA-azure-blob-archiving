@@ -5,8 +5,6 @@ import splunk
 import splunk.entity
 import splunk.Intersplunk
 import json
-import uuid
-import time
 import subprocess
 import tarfile
 import logging
@@ -155,7 +153,7 @@ class AzRestore_v1(azure2blob_rest_handler.RESTHandler):
                     target_file = str(target_directory) + str(blob_name)
 
                 # Download the blob file
-                logging.info("Attempting to download blob file=" + str(blob_name) + " target_file=" + str(target_file))
+                logging.info("Attempting to download blob file=\"{}\" to target_file=\"{}\"".format(str(blob_name), str(target_file)))
                 with open(target_file, "wb") as my_blob:
                     download_stream = blob_client.download_blob()
                     my_blob.write(download_stream.readall())
@@ -164,7 +162,7 @@ class AzRestore_v1(azure2blob_rest_handler.RESTHandler):
                 size_bytes = 'unknown'
                 if os.path.exists(target_file):
                     size_bytes = os.path.getsize(target_file)
-                    logging.info("blob file successfully downloaded to " + str(target_file) +  " size_bytes=" + str(size_bytes))
+                    logging.info("blob file successfully downloaded to target_file=\"{}\", size_bytes=\"{}\"".format(str(target_file), str(size_bytes)))
 
                 try:
                     # Get archive content and extract
@@ -204,7 +202,7 @@ class AzRestore_v1(azure2blob_rest_handler.RESTHandler):
                         "blob_name": str(blob_name),
                         "size_bytes" : str(size_bytes),
                         "archive_content": str(archive_content),
-                        "archive_topdirectory": str(archive_top_directory),
+                        "archive_top_directory": str(archive_top_directory),
                         "directory_onfilesystem": str(directory_onfilesystem),
                         "target_directory": str(target_directory),
                         "splunk_rebuild_action": str(splunk_rebuild_action),                      
@@ -218,7 +216,7 @@ class AzRestore_v1(azure2blob_rest_handler.RESTHandler):
                     }
 
                 except Exception as e:
-                    logging.error("failed to extract the file target_file=" + str(target_file) + " in target_directory=" + str(target_directory) + " with exception=" + str(e))
+                    logging.error("failed to extract the file target_file=\"{}\" in target_directory=\"{}\" with exception=\"{}\"".format(target_file, target_directory, str(e)))
                     # Remove the tgz
                     if os.path.exists(target_file):
                         os.remove(target_file)

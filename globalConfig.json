@@ -67,6 +67,27 @@
                             }
                         },
                         {
+                            "type": "singleSelect",
+                            "label": "Enable/Disable compression",
+                            "field": "AZ_COMPRESS",
+                            "defaultValue": "False",
+                            "help": "When the bucket is archived to the Azure blob storage, you can choose to compress it in tgz archive (which takes longer), or upload directly to the blob storage",
+                            "required": true,
+                            "options": {
+                                "disableSearch": true,
+                                "autoCompleteFields": [
+                                    {
+                                        "value": "True",
+                                        "label": "True"
+                                    },
+                                    {
+                                        "value": "False",
+                                        "label": "False"
+                                    }
+                                ]
+                            }
+                        },
+                        {
                             "type": "text",
                             "label": "Remote user name for restore",
                             "help": "The Splunk user to be used when performing bucket restore operations to remote peers",

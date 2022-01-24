@@ -136,8 +136,7 @@ class AzPurgeBlob(StreamingCommand):
                         AZ_BLOB_CONNECTION_STRING = stanzavalue
 
         # logging debug
-        logging.debug("AZ_BLOB_CONTAINER is: " + str(AZ_BLOB_CONTAINER))
-        logging.debug("AZ_BLOB_CONNECTION_STRING is: " + str(AZ_BLOB_CONNECTION_STRING))
+        logging.debug("AZ_BLOB_CONTAINER=\"{}\"".format(str(AZ_BLOB_CONTAINER)))
 
         # do not proceed of the connection string is not configured yet
         if str(AZ_BLOB_CONNECTION_STRING) == 'connection_string_to_the_blob_storage':
@@ -155,7 +154,7 @@ class AzPurgeBlob(StreamingCommand):
             try:
                 table_service = TableService(connection_string=AZ_BLOB_CONNECTION_STRING)
             except Exception as e:
-                logging.error("Failed to establish the service to the Azure table with exception=" + str(e))
+                logging.error("Failed to establish the service to the Azure table with exception=\"{}\"".format(str(e)))
 
         # empty array to store our processed records
         records_list = []
@@ -186,7 +185,7 @@ class AzPurgeBlob(StreamingCommand):
                     }
 
             # logging debug
-            logging.debug("downstream record=\"" + json.dumps(record, indent=1) + "\"")
+            logging.debug("downstream record=\"{}\"".format(json.dumps(record, indent=1)))
 
             # Append to the records array
             records_list.append(record)
@@ -197,7 +196,7 @@ class AzPurgeBlob(StreamingCommand):
 
         # total number of messages to be processed
         results_count = len(records_list)
-        logging.info("There are " + str(results_count) + " records to be processed into the Azure table")
+        logging.info("record_count=\"{}\" records to be processed into the Azure table".format(str(results_count)))
 
         # to report processed messages
         processed_count = 0
@@ -227,15 +226,15 @@ class AzPurgeBlob(StreamingCommand):
                 # simulation
                 #
                 if self.mode == 'simulate':
-                    logging.info("Simulation of blob file purge=\"" + json.dumps(subrecord, indent=1) + "\"")
-                    logging.debug("blob file to be purged=\"" + str(subrecord_blob_file) + "\"")
+                    logging.info("Simulation of blob file purge, record=\"{}\"".format(json.dumps(subrecord, indent=1)))
+                    logging.debug("blob file to be purged, blob_name=\"{}\"".format(str(subrecord_blob_file)))
 
                 #
                 # live
                 #
                 elif self.mode == 'live':
-                    logging.info("Attempting blob file purge=\"" + json.dumps(subrecord, indent=1) + "\"")
-                    logging.debug("blob file to be purged=\"" + str(subrecord_blob_file) + "\"")                    
+                    logging.info("Attempting to purge the blob file, record=\"{}\"".format(json.dumps(subrecord, indent=1)))
+                    logging.debug("blob file to be purged, blob_name=\"{}\"".format(str(subrecord_blob_file)))
 
                     try:
 
@@ -249,19 +248,19 @@ class AzPurgeBlob(StreamingCommand):
                         purged_count+=1
 
                         # log
-                        logging.info("blob=\"" + str(subrecord_blob_file) + " was successfully purged")
+                        logging.info("blob=\"{}\" was successfully purged".format(str(subrecord_blob_file)))
 
                         wasPurged = True
 
                     except Exception as e:
-                        logging.error("Error while performing the blob file purge with exception: " + str(e))
+                        logging.error("Error while performing the blob file purge with exception=\"{}\"".format(str(e)))
 
                     # if the blob was successfully purged, attempt to update the table
                     if wasPurged and self.update_table =='true':
                         logging.debug("Attempting to retrieve the record in the Azure table")
                         try:
                             table_record = table_service.get_entity(subrecord_Table, subrecord_PartitionKey, subrecord_RowKey, timeout=60)
-                            logging.debug("Record in table: " + str(table_record))
+                            logging.debug("In table record=\"{}\"".format(str(table_record)))
 
                             # Set the new record
                             table_record_update = {
@@ -277,10 +276,10 @@ class AzPurgeBlob(StreamingCommand):
                                 table_service.update_entity(subrecord_Table, table_record_update, timeout=60)
                                 logging.debug("record in Azure storage table was successfully updated")
                             except Exception as e:
-                                logging.error("Error while attempting to update the table record with exception: " + str(e))
+                                logging.error("Error while attempting to update the table record with exception=\"{}\"".format(str(e)))
 
                         except Exception as e:
-                            logging.error("Error while retrieving the table record with exception: " + str(e))
+                            logging.error("Error while retrieving the table record with exception=\"{}\"".format(str(e)))
 
             # processed count
             processed_count = processed_count + chunk_len

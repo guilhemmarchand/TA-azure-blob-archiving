@@ -148,7 +148,7 @@ class AzRestoreBatch(StreamingCommand):
                         }
                 
             # logging debug
-            logging.debug("downstream record=\"" + json.dumps(record, indent=1) + "\"")
+            logging.debug("downstream record=\"{}\"".format(json.dumps(record, indent=1)))
 
             # Append to the records array
             records_list.append(record)
@@ -159,7 +159,7 @@ class AzRestoreBatch(StreamingCommand):
 
         # total number of messages to be processed
         results_count = len(records_list)
-        logging.info("There are " + str(results_count) + " buckets to be restored")
+        logging.info("Number of buckets to restored, buckets_count=\"{}\"".format(str(results_count)))
 
         # to report processed messages
         processed_count = 0
@@ -174,7 +174,7 @@ class AzRestoreBatch(StreamingCommand):
             for subrecord in chunk:
                 # Request the restore endpoint
                 try:
-                    logging.debug("Processing to restore request=\"" + str(json.dumps(subrecord, indent=1)))
+                    logging.debug("Processing to restore request=\"{}\"".format(str(json.dumps(subrecord, indent=1))))
 
                     # Define if the request will be local or remote
                     remote_request = False
@@ -184,8 +184,7 @@ class AzRestoreBatch(StreamingCommand):
 
                     # handle
                     if str(subrecord_target_peer) != str(host_local):
-                        logging.debug("Target peer=" + str(subrecord_target_peer) + " differs from the local host=" + str(host_local) +\
-                            " assuming remote restore requested")
+                        logging.debug("Target peer=\"{}\" differs from the local host=\"{}\" assuming remote restore requested".format(str(subrecord_target_peer), str(host_local)))
                         remote_request = True
                     else:
                         logging.debug("Target peer is local host, restore will be attempted locally")
@@ -203,7 +202,7 @@ class AzRestoreBatch(StreamingCommand):
                             'blob_name': subrecord.get("blob_name"),
                             'target_directory': subrecord.get("target_directory"),
                         }
-                        logging.debug("request_data=" + json.dumps(request_data, indent=1))
+                        logging.debug("request_data=\"{}\"".format(json.dumps(request_data, indent=1)))
                         response = requests.post(endpointUrl, auth = HTTPBasicAuth(remote_username, remote_password), data=json.dumps(request_data, indent=1),
                                                 verify=False)
                         if response.status_code not in (200, 201, 204):
@@ -229,7 +228,7 @@ class AzRestoreBatch(StreamingCommand):
                             'blob_name': subrecord.get("blob_name"),
                             'target_directory': subrecord.get("target_directory"),
                         }
-                        logging.debug("request_data=" + json.dumps(request_data, indent=1))
+                        logging.debug("request_data=\"{}\"".format(json.dumps(request_data, indent=1)))
                         response = requests.post(endpointUrl, headers=headers, data=json.dumps(request_data, indent=1),
                                                 verify=False)
                         if response.status_code not in (200, 201, 204):
@@ -244,7 +243,7 @@ class AzRestoreBatch(StreamingCommand):
                             successes_count+=1
 
                 except Exception as e:
-                    logging.error("Error while processing restore request with exception: " + str(e))
+                    logging.error("Error while processing restore request with exception=\"{}\"".format(str(e)))
                     sys.exit(1)
 
             # processed count
