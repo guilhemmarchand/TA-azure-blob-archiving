@@ -48,6 +48,7 @@ class AzRestore_v1(azure2blob_rest_handler.RESTHandler):
         splunk_rebuild = None
         blob_name = None
         target_directory = None
+        file_type = None
 
         # Retrieve from data
         try:
@@ -71,6 +72,13 @@ class AzRestore_v1(azure2blob_rest_handler.RESTHandler):
                 blob_name = resp_dict['blob_name']
                 target_directory = resp_dict['target_directory']
 
+                # file_type default to archive, if the blob is the journal file, it needs to be
+                # set to file
+                try:
+                    file_type = resp_dict['file_type']
+                except Exception as e:
+                    file_type = "archive"
+
         else:
             # body is required in this endpoint, if not submitted describe the usage            
             describe = True
@@ -82,7 +90,8 @@ class AzRestore_v1(azure2blob_rest_handler.RESTHandler):
                 "options": [ {
                     "splunk_rebuild": "If the bucket should be rebuilt upon its extraction, valid options are: true | false",
                     "blob_name": "The blob name of the bucket, as stored in Azure",
-                    "target_directory": "The Splunk Thawte target directory",
+                    "target_directory": "The Splunk thaweddb target directory",
+                    "file_type": "Optional, specify the is the blob file is a tar archive (compressed or uncompressed), or a regularg file. (defaults to archive)",
                 }]
             }
 
@@ -141,52 +150,186 @@ class AzRestore_v1(azure2blob_rest_handler.RESTHandler):
             # Create the BlobServiceClient object which will be used to create a container client
             blob_service_client = BlobServiceClient.from_connection_string(AZ_BLOB_CONNECTION_STRING)
 
-            try:
+            # if the file_type is archive
 
-                container_client = blob_service_client.get_container_client(AZ_BLOB_CONTAINER)
-                blob_client = container_client.get_blob_client(blob_name)
-
-                # compose the taget_file
-                if ('/') in blob_name:
-                    target_file = str(target_directory) + str(blob_name.split("/")[-1])
-                else:
-                    target_file = str(target_directory) + str(blob_name)
-
-                # Download the blob file
-                logging.info("Attempting to download blob file=\"{}\" to target_file=\"{}\"".format(str(blob_name), str(target_file)))
-                with open(target_file, "wb") as my_blob:
-                    download_stream = blob_client.download_blob()
-                    my_blob.write(download_stream.readall())
-
-                # Retrieve the size of the tgz archive
-                size_bytes = 'unknown'
-                if os.path.exists(target_file):
-                    size_bytes = os.path.getsize(target_file)
-                    logging.info("blob file successfully downloaded to target_file=\"{}\", size_bytes=\"{}\"".format(str(target_file), str(size_bytes)))
+            if file_type == 'archive':
 
                 try:
-                    # Get archive content and extract
-                    archive_content = 'unknown'
-                    tar = tarfile.open(target_file, 'r')
-                    archive_content = tar.getnames()
-                    archive_top_directory = archive_content[0]
-                    directory_onfilesystem = str(target_directory) + '/' + str(archive_top_directory)
-                    for item in tar:
-                        tar.extract(item, target_directory)
-                    # Remove the tgz
+
+                    container_client = blob_service_client.get_container_client(AZ_BLOB_CONTAINER)
+                    blob_client = container_client.get_blob_client(blob_name)
+
+                    # compose the target_file
+                    if ('/') in blob_name:
+                        target_file = str(target_directory) + str(blob_name.split("/")[-1])
+                    else:
+                        target_file = str(target_directory) + str(blob_name)
+
+                    # Download the blob file
+                    logging.info("Attempting to download blob file=\"{}\" to target_file=\"{}\"".format(str(blob_name), str(target_file)))
+                    with open(target_file, "wb") as my_blob:
+                        download_stream = blob_client.download_blob()
+                        my_blob.write(download_stream.readall())
+
+                    # Retrieve the size
+                    size_bytes = 'unknown'
                     if os.path.exists(target_file):
-                        os.remove(target_file)
+                        size_bytes = os.path.getsize(target_file)
+                        logging.info("blob file successfully downloaded to target_file=\"{}\", size_bytes=\"{}\"".format(str(target_file), str(size_bytes)))
 
-                    #
-                    # Archive was downloaded and extracted successfully, we can proceed to rebuild
-                    #
+                    try:
+                        # Get archive content and extract
+                        archive_content = 'unknown'
+                        tar = tarfile.open(target_file, 'r')
+                        archive_content = tar.getnames()
+                        archive_top_directory = archive_content[0]
+                        directory_onfilesystem = str(target_directory) + '/' + str(archive_top_directory)
+                        for item in tar:
+                            tar.extract(item, target_directory)
+                        # Remove the tgz
+                        if os.path.exists(target_file):
+                            os.remove(target_file)
 
+                        #
+                        # Archive was downloaded and extracted successfully, we can proceed to rebuild
+                        #
+
+                        if splunk_rebuild:
+
+                            # for logging and output purposes
+                            splunk_rebuild_action = 'True'
+
+                            process = subprocess.Popen(['/opt/splunk/bin/splunk', 'rebuild', str(directory_onfilesystem)],
+                                                stdout=subprocess.PIPE, 
+                                                stderr=subprocess.PIPE)
+                            stdout, stderr = process.communicate()
+                            logging.info(stdout)
+                            if stderr:
+                                logging.info(stderr)
+
+                        else:
+                            # for logging and output purposes
+                            splunk_rebuild_action = 'False'
+
+                        msg = {
+                            "blob_name": str(blob_name),
+                            "file_type": str(file_type),
+                            "size_bytes" : str(size_bytes),
+                            "archive_content": str(archive_content),
+                            "archive_top_directory": str(archive_top_directory),
+                            "directory_onfilesystem": str(directory_onfilesystem),
+                            "target_directory": str(target_directory),
+                            "splunk_rebuild_action": str(splunk_rebuild_action),                      
+                            "status": "success",
+                        }
+
+                        logging.info(msg)
+                        return {
+                            "payload": json.dumps(msg, indent=1),
+                            'status': 200 # HTTP status code
+                        }
+
+                    # Exception at extraction step
+                    except Exception as e:
+                        logging.error("failed to extract the file target_file=\"{}\" in target_directory=\"{}\" with exception=\"{}\"".format(target_file, target_directory, str(e)))
+                        # Remove the tgz
+                        if os.path.exists(target_file):
+                            os.remove(target_file)
+
+                        msg = {
+                            "blob_name": str(blob_name),
+                            "file_type": str(file_type),
+                            "size_bytes" : str(size_bytes),
+                            "archive_content": str(archive_content),
+                            "target_directory": str(target_directory),                        
+                            "status": "failure",
+                            "exception": str(e),
+                        }
+
+                        logging.info(msg)
+                        return {
+                            "payload": json.dumps(msg, indent=1),
+                            'status': 500 # HTTP status code
+                        }
+
+                # Exception at download step
+                except Exception as e:
+
+                    msg = {
+                        "blob_name": str(blob_name),
+                        "file_type": str(file_type),
+                        "target_directory": str(target_directory),
+                        "status": "failure",
+                        "exception": str(e),
+                    }
+
+                    logging.error(msg)
+                    return {
+                        "payload": json.dumps(msg, indent=1),
+                        'status': 500 # HTTP status code
+                    }
+
+
+            elif file_type == 'file':
+
+                # this is a file
+                try:
+
+                    container_client = blob_service_client.get_container_client(AZ_BLOB_CONTAINER)
+                    blob_client = container_client.get_blob_client(blob_name)
+
+                    # before downloading, attemtp to create the directory target if necessary
+                    if not os.path.isdir(target_directory):
+                        try:
+                            os.mkdir(target_directory)
+                        except Exception as e:
+                            msg = "Failed to create the target_directory=\"{}\" with exception=\"{}\"".format(target_directory, str(e))
+                            logging.error(msg)
+                            return {
+                                "payload": msg,
+                                'status': 500 # HTTP status code
+                            }
+
+                    # handle rawdata directory
+                    if not target_directory.endswith("rawdata"):
+                        # create the rawdata directory
+                        if not os.path.isdir(os.path.join(target_directory, "rawdata")):
+                            try:
+                                os.mkdir(os.path.join(target_directory, "rawdata"))
+                            except Exception as e:
+                                msg = "Failed to create the rawdata target_directory=\"{}\" with exception=\"{}\"".format(os.path.join(target_directory, "rawdata"), str(e))
+                                logging.error(msg)
+                                return {
+                                    "payload": msg,
+                                    'status': 500 # HTTP status code
+                                }
+                            bucket_directory = target_directory
+                            target_directory = os.path.join(target_directory, "rawdata")
+                    else:
+                        bucket_directory = target_directory
+
+                    # compose the target_file, in file mode the directory should be containing the bucket target
+                    target_file = str(target_directory) + "/" + str(blob_name.split("/")[-1])
+
+                    # Download the blob file
+                    logging.info("Attempting to download blob file=\"{}\" to target_file=\"{}\"".format(str(blob_name), str(target_file)))
+                    with open(target_file, "wb") as my_blob:
+                        download_stream = blob_client.download_blob()
+                        my_blob.write(download_stream.readall())
+
+                    # Retrieve the size
+                    size_bytes = 'unknown'
+                    if os.path.exists(target_file):
+                        size_bytes = os.path.getsize(target_file)
+                        logging.info("blob file successfully downloaded to target_file=\"{}\", size_bytes=\"{}\"".format(str(target_file), str(size_bytes)))
+
+                    # If rebuild is set
                     if splunk_rebuild:
 
                         # for logging and output purposes
                         splunk_rebuild_action = 'True'
 
-                        process = subprocess.Popen(['/opt/splunk/bin/splunk', 'rebuild', str(directory_onfilesystem)],
+                        process = subprocess.Popen(['/opt/splunk/bin/splunk', 'rebuild', str(bucket_directory)],
                                             stdout=subprocess.PIPE, 
                                             stderr=subprocess.PIPE)
                         stdout, stderr = process.communicate()
@@ -201,9 +344,7 @@ class AzRestore_v1(azure2blob_rest_handler.RESTHandler):
                     msg = {
                         "blob_name": str(blob_name),
                         "size_bytes" : str(size_bytes),
-                        "archive_content": str(archive_content),
-                        "archive_top_directory": str(archive_top_directory),
-                        "directory_onfilesystem": str(directory_onfilesystem),
+                        "file_type": str(file_type),
                         "target_directory": str(target_directory),
                         "splunk_rebuild_action": str(splunk_rebuild_action),                      
                         "status": "success",
@@ -215,38 +356,19 @@ class AzRestore_v1(azure2blob_rest_handler.RESTHandler):
                         'status': 200 # HTTP status code
                     }
 
+                # Exception at download step
                 except Exception as e:
-                    logging.error("failed to extract the file target_file=\"{}\" in target_directory=\"{}\" with exception=\"{}\"".format(target_file, target_directory, str(e)))
-                    # Remove the tgz
-                    if os.path.exists(target_file):
-                        os.remove(target_file)
 
                     msg = {
                         "blob_name": str(blob_name),
-                        "size_bytes" : str(size_bytes),
-                        "archive_content": str(archive_content),
-                        "target_directory": str(target_directory),                        
+                        "file_type": str(file_type),
+                        "target_directory": str(target_directory),
                         "status": "failure",
                         "exception": str(e),
                     }
 
-                    logging.info(msg)
+                    logging.error(msg)
                     return {
                         "payload": json.dumps(msg, indent=1),
                         'status': 500 # HTTP status code
                     }
-
-            except Exception as e:
-
-                msg = {
-                    "blob_name": str(blob_name),
-                    "target_directory": str(target_directory),
-                    "status": "failure",
-                    "exception": str(e),
-                }
-
-                logging.error(msg)
-                return {
-                    "payload": json.dumps(msg, indent=1),
-                    'status': 500 # HTTP status code
-                }
