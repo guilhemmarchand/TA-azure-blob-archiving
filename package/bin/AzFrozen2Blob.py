@@ -359,6 +359,7 @@ if __name__ == "__main__":
     record_found = False
     record_status = None
 
+    logging.info("Attempting to find a record in table for bucket=\"{}\", bucket_id=\"{}\"".format(str(bucket), str(bucket_id)))
     try:
         with contextlib.redirect_stderr(None):
             record = table_service.get_entity(AZ_STORAGE_TABLE_NAME, AZ_BLOB_CONTAINER, bucket_id, select='status', timeout=60)
@@ -367,15 +368,12 @@ if __name__ == "__main__":
     except Exception as e:
         record_found = False
 
-    if record_found and record_status in "success":
+    if record_found and record_status in ("success", "deleted", "imported"):
         bucket_is_archived = True
-    else:
-        bucket_is_archived = False
-
-    if bucket_is_archived:
-        logging.info("The bucket=\"{}\", bucket_id=\"{}\" has been archived already, nothing to do and will exit 0".format(str(bucket), str(bucket_id)))
+        logging.info("The bucket=\"{}\", bucket_id=\"{}\" has been archived already with status=\"{}\", nothing to do and will exit 0".format(str(bucket), str(bucket_id), str(record_status)))
         sys.exit(0)
     else:
+        bucket_is_archived = False
         logging.info("The bucket=\"{}\", bucket_id=\"{}\" has not been archived yet, proceed to archiving now".format(str(bucket), str(bucket_id)))
 
     # Proceed depending on the selected options
