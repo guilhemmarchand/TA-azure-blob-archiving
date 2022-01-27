@@ -3,7 +3,7 @@
 # purpose: easy peasy migrate existing local archives to Azure
 
 # Example of usage:
-# ./AzMigrateLocalArchive.sh --target="/opt/splunk/var/lib/splunk" --frozen_dirname="frozen" --remove=true --splunk_home="/opt/splunk"
+# bash bash /opt/splunk/etc/slave-apps/TA-azure-blob-archiving/bin/shell_tools/AzMigrateLocalArchive.sh --target="/opt/splunk/var/lib/splunk" --frozen_dirname="frozen" --remove=true --splunk_home="/opt/splunk"
 #
 
 # set TERM
@@ -106,24 +106,23 @@ esac
 PWD=$(pwd)
 
 cd "$target"
+echo ""
+echo -e "${yellow}Azure to blob local archiving program start${reset}"
+echo ""
 while IFS= read -r -d '' dir; do
-    # single filename is in $file
-    echo "$dir"
-    # your code here
-
     echo -e "${blue}Processing bucket=${dir} ${reset}"
     /usr/bin/python3 "$SPLUNK_HOME/etc/slave-apps/TA-azure-blob-archiving/bin/AzFrozen2Blob.py" "${dir}"
 
     if [ $? -eq 0 ] || [ $remove_bool -eq 1 ]; then
-        echo -e "${blue}bucket=${dir} was successfully archives to Azure, removing the bucket from the file-system${reset}"
+        echo -e "${green}bucket=${dir} was successfully archived to Azure, removing the bucket from the file-system${reset}"
         rm -rf "${dir}"
         if [ $? -eq 0 ]; then
-            echo -e "${blue}bucket=${dir} was successfully removed${reset}"
+            echo -e "${green}bucket=${dir} was successfully removed${reset}"
         else
             echo -e "${red}bucket=${dir} could not be removed${reset}"
         fi
     else
-        echo -e "${blue}bucket=${dir} was successfully archives to Azure and will not be removed from the file-system${reset}"
+        echo -e "${green}bucket=${dir} was successfully archived to Azure, it has not been removed from the file-system as per your request${reset}"
     fi
 
 done \
@@ -133,4 +132,7 @@ done \
     <(find "$target"/*/"${frozen_dirname}" -name "db_*" -o -name "rb_*" -type d -print0)
 
 cd $PWD
+echo ""
+echo -e "${yellow}Azure to blob local archiving program end${reset}"
+echo ""
 exit 0
