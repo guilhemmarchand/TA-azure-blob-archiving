@@ -286,7 +286,7 @@ if __name__ == "__main__":
         logging.debug("the bucket name ends with a / %s" % bucket)
         bucket = bucket[:-1]
 
-    idx_struct = re.search(r'(.*)\/(colddb|db)\/(.*)', bucket, re.MULTILINE)
+    idx_struct = re.search(r'(.*)\/(colddb|db|frozen|frozendb)\/(.*)', bucket, re.MULTILINE)
     logging.debug("idx_struct is %s" % idx_struct)
 
     if idx_struct is None:

@@ -32,7 +32,7 @@ while [ "$1" != "" ]; do
         ;;
     --splunk_home)
         splunk_home=$VALUE
-        SPLUNK_HOME=$VALUE
+        export SPLUNK_HOME=$VALUE
         ;;
     --target)
         target=$VALUE
@@ -92,7 +92,7 @@ case "$remove" in
     echo -e "${blue}Buckets will be removed automatically if the upload to Azure was successful.${reset}"
     remove_bool=1
     ;;
-"true" | "True")
+"false" | "False")
     echo -e "${blue}Buckets will be not be removed automatically after the upload, whatever the status is.${reset}"
     remove_bool=0
     ;;
@@ -109,27 +109,73 @@ cd "$target"
 echo ""
 echo -e "${yellow}Azure to blob local archiving program start${reset}"
 echo ""
-while IFS= read -r -d '' dir; do
-    echo -e "${blue}Processing bucket=${dir} ${reset}"
-    /usr/bin/python3 "$SPLUNK_HOME/etc/slave-apps/TA-azure-blob-archiving/bin/AzFrozen2Blob.py" "${dir}"
 
-    if [ $? -eq 0 ] || [ $remove_bool -eq 1 ]; then
-        echo -e "${green}bucket=${dir} was successfully archived to Azure, removing the bucket from the file-system${reset}"
-        rm -rf "${dir}"
-        if [ $? -eq 0 ]; then
-            echo -e "${green}bucket=${dir} was successfully removed${reset}"
-        else
-            echo -e "${red}bucket=${dir} could not be removed${reset}"
+cd "$target"
+
+# loop through the indexes
+for indexdir in $(ls -d *); do
+
+    if [ -d "${indexdir}" ]; then
+
+        echo -e "${blue}Processing index=${indexdir} ${reset}"
+
+        if [ -d $indexdir/$frozen_dirname ]; then
+            cd $indexdir/$frozen_dirname
+
+            find . -maxdepth 1 -mindepth 1 -name "db_*" -type d -printf '%f\n' | while read bucket; do
+
+                if [ -d ${bucket} ] && [ -d ${bucket}/rawdata ]; then
+
+                    bucket_fullpath="${target}/${indexdir}/$frozen_dirname/${bucket}"
+
+                    echo -e "${blue}Processing bucket=${bucket_fullpath} ${reset}"
+                    "$SPLUNK_HOME/etc/slave-apps/TA-azure-blob-archiving/bin/AzFrozen2Blob.sh" "${bucket_fullpath}"
+                    if [ $? -eq 0 ]; then
+                        if [ $remove_bool -eq 1 ]; then
+                            echo -e "${green}bucket=${bucket} was successfully archived to Azure, removing the bucket from the file-system${reset}"
+                            rm -rf "${bucket}"
+                        else
+                            echo -e "${green}bucket=${bucket} was successfully archived to Azure, it has not been removed from the file-system as per your request${reset}"
+                        fi
+                    else
+                        echo -e "${red}bucket=${bucket} failure to achive to Azure, consult the logs for more information${reset}"
+                    fi
+
+                fi
+
+            done
+
+            find . -maxdepth 1 -mindepth 1 -name "rb_*" -type d -printf '%f\n' | while read bucket; do
+
+                if [ -d ${bucket} ] && [ -d ${bucket}/rawdata ]; then
+
+                    bucket_fullpath="${target}/${indexdir}/$frozen_dirname/${bucket}"
+
+                    echo -e "${blue}Processing bucket=${bucket_fullpath} ${reset}"
+                    "$SPLUNK_HOME/etc/slave-apps/TA-azure-blob-archiving/bin/AzFrozen2Blob.sh" "${bucket_fullpath}"
+                    if [ $? -eq 0 ]; then
+                        if [ $remove_bool -eq 1 ]; then
+                            echo -e "${green}bucket=${bucket} was successfully archived to Azure, removing the bucket from the file-system${reset}"
+                            rm -rf "${bucket}"
+                        else
+                            echo -e "${green}bucket=${bucket} was successfully archived to Azure, it has not been removed from the file-system as per your request${reset}"
+                        fi
+                    else
+                        echo -e "${red}bucket=${bucket} failure to achive to Azure, consult the logs for more information${reset}"
+                    fi
+
+                fi
+
+            done
+
+            # go back
+            cd "$target"
+
         fi
-    else
-        echo -e "${green}bucket=${dir} was successfully archived to Azure, it has not been removed from the file-system as per your request${reset}"
+
     fi
 
-done \
-    < \
-    \
-    \
-    <(find "$target"/*/"${frozen_dirname}" -name "db_*" -o -name "rb_*" -type d -print0)
+done
 
 cd $PWD
 echo ""
