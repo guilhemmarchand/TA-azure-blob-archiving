@@ -1,7 +1,7 @@
-<form script="set_input.js" theme="dark">
+<form script="set_input.js" theme="dark" hideEdit="true">
   <label>Az2Blob - Buckets</label>
   <search id="baseSearch" depends="$start_searches$">
-    <query>| savedsearch "Az2Blob - get AZ Table" | stats c by StorageAccount, PartitionKey, indexname</query>
+    <query>| savedsearch "Az2Blob - get AZ Table" | stats c, first(status) as status by StorageAccount, PartitionKey, indexname</query>
     <earliest>-90m</earliest>
     <latest>now</latest>
   </search>
@@ -19,6 +19,17 @@
     </progress>
   </search>
   <fieldset submitButton="true" autoRun="false">
+    <input type="dropdown" token="status" searchWhenChanged="true">
+      <label>Status</label>
+      <choice value="success">success</choice>
+      <choice value="deleted">deleted</choice>
+      <choice value="imported">imported</choice>
+      <choice value="*">ANY</choice>
+      <default>ANY</default>
+      <prefix>status="</prefix>
+      <suffix>"</suffix>
+      <initialValue>ANY</initialValue>
+    </input>
     <input type="multiselect" token="StorageAccount" searchWhenChanged="true">
       <label>StorageAccount(s):</label>
       <choice value="*">ANY</choice>
@@ -28,7 +39,7 @@
       <fieldForLabel>StorageAccount</fieldForLabel>
       <fieldForValue>StorageAccount</fieldForValue>
       <search base="baseSearch">
-        <query>stats c by StorageAccount | fields StorageAccount | sort 0 StorageAccount</query>
+        <query>search $status$ | stats c by StorageAccount | fields StorageAccount | sort 0 StorageAccount</query>
       </search>
       <initialValue>*</initialValue>
     </input>
@@ -41,7 +52,7 @@
       <fieldForLabel>PartitionKey</fieldForLabel>
       <fieldForValue>PartitionKey</fieldForValue>
       <search base="baseSearch">
-        <query>stats c by PartitionKey | fields PartitionKey | sort 0 PartitionKey</query>
+        <query>search $status$ | stats c by PartitionKey | fields PartitionKey | sort 0 PartitionKey</query>
       </search>
       <initialValue>*</initialValue>
     </input>
@@ -54,7 +65,7 @@
       <fieldForLabel>indexname</fieldForLabel>
       <fieldForValue>indexname</fieldForValue>
       <search base="baseSearch">
-        <query>stats c by indexname | fields indexname | sort 0 indexname</query>
+        <query>search $status$ | stats c by indexname | fields indexname | sort 0 indexname</query>
       </search>
       <initialValue>*</initialValue>
     </input>
@@ -117,7 +128,7 @@
     <panel>
       <table>
         <search id="baseTable" depends="$start_searches$">
-          <query>| savedsearch "Az2Blob - get AZ Table" | search $StorageAccount$ $PartitionKey$ $indexname$
+          <query>| savedsearch "Az2Blob - get AZ Table" | search $status$ $StorageAccount$ $PartitionKey$ $indexname$
 | eval filter_start_date="$date_start_tk$", filter_end_date="$date_end_tk$", filter_start_date=strptime(filter_start_date, "%Y-%m-%d"), filter_end_date=strptime(filter_end_date, "%Y-%m-%d")
 | foreach filter_start_date, filter_end_date [ eval &lt;&lt;FIELD&gt;&gt; = round('&lt;&lt;FIELD&gt;&gt;', 0) ] | where (epoch_start&gt;=filter_start_date AND epoch_end&lt;=filter_end_date) | fields - filter_start_date, filter_end_date</query>
           <sampleRatio>1</sampleRatio>

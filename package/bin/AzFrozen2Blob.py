@@ -404,8 +404,8 @@ if __name__ == "__main__":
             sys.exit() 
         
         # Print the size (in bytes) 
-        # of specified path  
-        logging.debug("Size (In bytes) of '% s':" % bucket_tarfile, size)    
+        # of specified path
+        logging.debug("bucket_tarfile=\"{}\", size_bytes=\"{}\"".format(bucket_tarfile, size))
 
         # Print the peer name
         logging.debug("the peer name is %s" %peer_name)
@@ -485,7 +485,7 @@ if __name__ == "__main__":
         
         # Print the size (in bytes) 
         # of specified path  
-        logging.debug("Size (In bytes) of '% s':" % bucket_tarfile, size)    
+        logging.debug("bucket_tarfile=\"{}\", size_bytes=\"{}\"".format(bucket_tarfile, size))   
 
         # Print the peer name
         logging.debug("the peer name is %s" %peer_name)

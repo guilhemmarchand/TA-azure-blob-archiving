@@ -1,23 +1,25 @@
 <nav search_view="search" color="#404040">
   <view name="az2blob_overview" default="true" />
   <view name="az2blob_buckets" />
-  <collection label="Collections">
-    <a href="search?q=%7C%20inputlookup%20az2blob_table_summary%20%7C%20eval%20keyid%3D_key">Az2blob Table Summary</a>
+  <collection label="AzTable - Storage Table">
+    <a href="search?q=%7C%20azgettable%20%5B%7C%20rest%20splunk_server%3Dlocal%20%2FservicesNS%2Fnobody%2FTA-azure-blob-archiving%2Fazure2blob_settings%2Fazure2blob%20%7C%20table%20AZ_STORAGE_TABLE_NAME%20%7C%20rename%20AZ_STORAGE_TABLE_NAME%20as%20target_table%20%7C%20return%20target_table%5D%20%20%5B%7C%20rest%20splunk_server%3Dlocal%20%2FservicesNS%2Fnobody%2FTA-azure-blob-archiving%2Fazure2blob_settings%2Fazure2blob%20%7C%20table%20AZ_BLOB_CONTAINER%20%7C%20rename%20AZ_BLOB_CONTAINER%20as%20partition_key%20%7C%20return%20partition_key%5D%20%7C%20spath">AzGetTable - Live Azure Storage table</a>
+    <a href="search?q=%7C%20inputlookup%20az2blob_table_summary%20%7C%20eval%20keyid%3D_key">KVstore - az2blob_table_summary</a>
   </collection>
 	<collection label="Az2blob reports">
 		<saved name="Az2Blob - az2blob_table_summary Lookup gen" />
-		<saved name="Az2Blob - get AZ Table" />    
+		<saved name="Az2Blob - az2blob_table_summary Lookup update from Live" />
+    <saved name="Az2Blob - get AZ Table" />
 	</collection>
 	<collection label="Az2blob logging">
-		<saved name="Az2Blob - AzFrozen2blob logs" />
-		<saved name="Az2Blob - AzRestore logs" />
-		<saved name="Az2Blob - AzRestoreBatch logs" />
-		<saved name="Az2Blob - AzExportTable logs" />
-		<saved name="Az2Blob - AzPurgeBlob logs" />    
-		<saved name="Az2Blob - azGetTable logs" />
-		<saved name="Az2Blob - BucketMover activity" />
-		<saved name="Az2Blob - BucketMover errors" />
-		<saved name="Az2Blob - BucketMover bucket freezing activity" />
+    <a href="search?q=index%3D_internal%20sourcetype%3D%22azure2blob%3Aazfrozen2blob%22">Az2Blob - AzFrozen2blob logs</a>
+    <a href="search?q=index%3D_internal%20sourcetype%3D%22azure2blob%3Arestore%22">Az2Blob - AzRestore logs</a>
+    <a href="search?q=index%3D_internal%20sourcetype%3D%22azure2blob%3Aazrestorebatch%22">Az2Blob - AzRestoreBatch logs</a>
+    <a href="search?q=index%3D_internal%20sourcetype%3D%22azure2blob%3Aazexporttable%22">Az2Blob - AzExportTable logs</a>
+    <a href="search?q=index%3D_internal%20sourcetype%3D%22azure2blob%3Aazpurgeblob%22">Az2Blob - AzPurgeBlob logs</a>
+    <a href="search?q=index%3D_internal%20sourcetype%3D%22azure2blob%3Aazgettable%22">Az2Blob - azGetTable logs</a>
+    <a href="search?q=index%3D_internal%20sourcetype%3Dsplunkd%20BucketMover">Az2Blob - BucketMover activity</a>
+    <a href="search?q=index%3D_internal%20sourcetype%3Dsplunkd%20BucketMover%20CASE%28ERROR%29">Az2Blob - BucketMover errors</a>
+    <a href="search?q=index%3D_internal%20sourcetype%3Dsplunkd%20bucketmover%20freeze">Az2Blob - BucketMover bucket freezing activity</a>    
 	</collection>
   <view name="configuration" />
   <collection label="Search">

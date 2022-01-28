@@ -1,17 +1,29 @@
-<dashboard theme="dark" hideEdit="true">
+<form theme="dark" hideEdit="true">
   <label>Az2Blob - Overview</label>
   <search id="baseSearch">
-    <query>| savedsearch "Az2Blob - get AZ Table" | eval time=strptime(Timestamp, "%Y-%m-%dT%H:%M:%S.%6N"), _time=strftime(time, "%s") | where _time&gt;=relative_time(now(), "-7d") | stats c by StorageAccount, PartitionKey, indexname</query>
-    <earliest>-90m</earliest>
-    <latest>now</latest>
+    <query>| savedsearch "Az2Blob - get AZ Table" | eval time=strptime(Timestamp, "%Y-%m-%dT%H:%M:%S.%6N"), _time=strftime(time, "%s")
+| addinfo | where _time&gt;=info_min_time AND (_time&lt;=info_max_time OR info_max_time="+Infinity")
+| stats c by StorageAccount, PartitionKey, indexname</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
   </search>
   <search id="baseRaw">
     <query>| savedsearch "Az2Blob - get AZ Table"
-| eval time=strptime(Timestamp, "%Y-%m-%dT%H:%M:%S.%6N"), _time=strftime(time, "%s") | where _time&gt;=relative_time(now(), "-7d")</query>
-    <earliest>-90m</earliest>
-    <latest>now</latest>
+| eval time=strptime(Timestamp, "%Y-%m-%dT%H:%M:%S.%6N"), _time=strftime(time, "%s")
+| addinfo | where _time&gt;=info_min_time AND (_time&lt;=info_max_time OR info_max_time="+Infinity")</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
     <sampleRatio>1</sampleRatio>
-  </search>  
+  </search>
+  <fieldset submitButton="false">
+    <input type="time" token="time" searchWhenChanged="true">
+      <label>Period:</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
   <row>
     <panel>
       <single>
@@ -74,7 +86,7 @@
   </row>
   <row>
     <panel>
-      <title>Buckets archived to Azure by blob container - Over the last 7 days</title>
+      <title>Buckets archived to Azure by blob container</title>
       <chart>
         <search base="baseRaw">
           <query>timechart span=1h useother=t limit=40 count as buckets_archived by PartitionKey</query>
@@ -113,7 +125,7 @@
       </chart>
     </panel>
     <panel>
-      <title>Buckets archived to Azure by storage account - Over the last 7 days</title>
+      <title>Buckets archived to Azure by storage account</title>
       <chart>
         <search base="baseRaw">
           <query>timechart span=1h useother=t limit=40 count as buckets_archived by StorageAccount</query>
@@ -154,7 +166,7 @@
   </row>
   <row>
     <panel>
-      <title>Buckets archived to Azure by index (top 20) - Over the last 7 days</title>
+      <title>Buckets archived to Azure by index (top 20)</title>
       <chart>
         <search base="baseRaw">
           <query>timechart span=1h useother=f limit=20 count as buckets_archived by indexname</query>
@@ -194,7 +206,7 @@
       </chart>
     </panel>
     <panel>
-      <title>Volume of data archived (GB) - Over the last 7 days</title>
+      <title>Volume of data archived (GB)</title>
       <chart>
         <search base="baseRaw">
           <query>timechart span=1h useother=f limit=20 sum(size_mb) as size | eval size=round(size/1024, 2)</query>
@@ -236,21 +248,21 @@
   </row>
   <row>
     <panel>
-      <title>BucketMover events per log level - Over the last 7 days</title>
+      <title>BucketMover events per log level</title>
       <chart>
         <search>
           <query>index=_internal sourcetype=splunkd BucketMover
 | timechart span=1h count by log_level</query>
-          <earliest>-7d@h</earliest>
-          <latest>now</latest>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
         </search>
         <option name="charting.axisTitleX.visibility">collapsed</option>
         <option name="charting.chart">column</option>
         <option name="charting.chart.stackMode">stacked</option>
-        <option name="charting.drilldown">none</option>
+        <option name="charting.drilldown">all</option>
         <option name="charting.legend.placement">top</option>
         <option name="refresh.display">progressbar</option>
       </chart>
     </panel>
   </row>
-</dashboard>
+</form>

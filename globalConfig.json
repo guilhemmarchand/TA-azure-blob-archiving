@@ -77,11 +77,11 @@
                                 "disableSearch": true,
                                 "autoCompleteFields": [
                                     {
-                                        "value": "True",
+                                        "value": "1",
                                         "label": "True"
                                     },
                                     {
-                                        "value": "False",
+                                        "value": "0",
                                         "label": "False"
                                     }
                                 ]
