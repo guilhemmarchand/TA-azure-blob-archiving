@@ -70,6 +70,9 @@ class AzRestore_v1(azure2blob_rest_handler.RESTHandler):
                     splunk_rebuild = False
                 blob_name = resp_dict['blob_name']
                 target_directory = resp_dict['target_directory']
+                # make sure we have a trailing slash
+                if not target_directory.endswith('/'):
+                    target_directory = target_directory + '/'
 
         else:
             # body is required in this endpoint, if not submitted describe the usage            
@@ -186,7 +189,11 @@ class AzRestore_v1(azure2blob_rest_handler.RESTHandler):
                         # for logging and output purposes
                         splunk_rebuild_action = 'True'
 
-                        process = subprocess.Popen(['/opt/splunk/bin/splunk', 'rebuild', str(directory_onfilesystem)],
+                        # set splunk_bin
+                        splunk_bin = splunkhome + '/bin/splunk'
+
+                        # set the subprocess command
+                        process = subprocess.Popen([splunk_bin, 'rebuild', str(directory_onfilesystem)],
                                             stdout=subprocess.PIPE, 
                                             stderr=subprocess.PIPE)
                         stdout, stderr = process.communicate()
