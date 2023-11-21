@@ -1,18 +1,18 @@
-<form theme="dark" hideEdit="true">
+<form theme="dark" hideEdit="true" version="1.1">
   <label>Az2Blob - Overview</label>
   <search id="baseSearch">
     <query>| savedsearch "Az2Blob - get AZ Table" | eval time=strptime(Timestamp, "%Y-%m-%dT%H:%M:%S.%6N"), _time=strftime(time, "%s")
 | addinfo | where _time&gt;=info_min_time AND (_time&lt;=info_max_time OR info_max_time="+Infinity")
 | stats c by StorageAccount, PartitionKey, indexname</query>
-          <earliest>$time.earliest$</earliest>
-          <latest>$time.latest$</latest>
+    <earliest>$time.earliest$</earliest>
+    <latest>$time.latest$</latest>
   </search>
   <search id="baseRaw">
     <query>| savedsearch "Az2Blob - get AZ Table"
 | eval time=strptime(Timestamp, "%Y-%m-%dT%H:%M:%S.%6N"), _time=strftime(time, "%s")
 | addinfo | where _time&gt;=info_min_time AND (_time&lt;=info_max_time OR info_max_time="+Infinity")</query>
-          <earliest>$time.earliest$</earliest>
-          <latest>$time.latest$</latest>
+    <earliest>$time.earliest$</earliest>
+    <latest>$time.latest$</latest>
     <sampleRatio>1</sampleRatio>
   </search>
   <fieldset submitButton="false">
