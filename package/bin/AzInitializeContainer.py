@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# README: 
+# README:
 # - Use this Python script to create the Azure table to be used to store bucket archiving information
 # - To run:
 # export SPLUNK_HOME="/opt/splunk"
@@ -8,40 +8,47 @@
 
 import sys, os, gzip, shutil, subprocess, random, re, platform, time
 import configparser
-from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient, __version__
+from azure.storage.blob import (
+    BlobServiceClient,
+    BlobClient,
+    ContainerClient,
+    __version__,
+)
 
 # Verify SPLUNK_HOME environment variable is available, the script is expected to be launched by Splunk which
 #  will set this for debugging or manual run, please set this variable manually
 try:
     os.environ["SPLUNK_HOME"]
 except KeyError:
-    print('The environment variable SPLUNK_HOME could not be verified, if you want to run this script '
-                  'manually you need to export it before processing')
+    print(
+        "The environment variable SPLUNK_HOME could not be verified, if you want to run this script "
+        "manually you need to export it before processing"
+    )
     sys.exit(1)
-SPLUNK_HOME = os.environ['SPLUNK_HOME']
+SPLUNK_HOME = os.environ["SPLUNK_HOME"]
 
 # Guest Operation System type
 ostype = platform.system().lower()
 
 # If running Windows OS (used for directory identification)
-is_windows = re.match(r'^win\w+', (platform.system().lower()))
+is_windows = re.match(r"^win\w+", (platform.system().lower()))
 
 # Discover app path
 # app name
 appname = "TA-azure-blob-archiving"
 
 if is_windows:
-    TA_APP = SPLUNK_HOME + '\\etc\\apps\\' + appname
+    TA_APP = SPLUNK_HOME + "\\etc\\apps\\" + appname
 else:
-    TA_APP = SPLUNK_HOME + '/etc/apps/' + appname
+    TA_APP = SPLUNK_HOME + "/etc/apps/" + appname
 
 if is_windows:
-    TA_APP_CLUSTERED = SPLUNK_HOME + '\\etc\\slave-apps\\' + appname
+    TA_APP_CLUSTERED = SPLUNK_HOME + "\\etc\\peer-apps\\" + appname
 else:
-    TA_APP_CLUSTERED = SPLUNK_HOME + '/etc/slave-apps/' + appname
+    TA_APP_CLUSTERED = SPLUNK_HOME + "/etc/peer-apps/" + appname
 
 # Empty APP
-APP = ''
+APP = ""
 
 # Verify APP exist
 if os.path.exists(TA_APP):
@@ -49,8 +56,12 @@ if os.path.exists(TA_APP):
 elif os.path.exists(TA_APP_CLUSTERED):
     APP = TA_APP_CLUSTERED
 else:
-    msg = 'The Application root directory could not be found, is the TA-azure-blob-archiving installed ? We tried: ' + \
-          str(TA_APP) + ' ' + str(TA_APP_CLUSTERED)
+    msg = (
+        "The Application root directory could not be found, is the TA-azure-blob-archiving installed ? We tried: "
+        + str(TA_APP)
+        + " "
+        + str(TA_APP_CLUSTERED)
+    )
     print(msg)
     sys.exit(1)
 
@@ -72,9 +83,9 @@ AZ_BLOB_CONTAINER_DEFAULT = config.get("azure2blob", "AZ_BLOB_CONTAINER")
 
 # Check config exists
 if not os.path.isfile(config_inifile):
-    msg = 'Please configure your Azure blob settings by creating and configuring a local/azblobconfig.conf.'
+    msg = "Please configure your Azure blob settings by creating and configuring a local/azblobconfig.conf."
     print(msg)
-    sys.exit(1)    
+    sys.exit(1)
 
 # Then read local config
 config.read(config_inifile)
@@ -100,18 +111,24 @@ else:
 
 # Verify AZ_BLOB_CONNECTION_STRING env variable, this is the SAS connection string to the Azure Blob storage
 if not AZ_BLOB_CONNECTION_STRING:
-    print('The environment variable AZ_BLOB_CONNECTION_STRING could not be verified, this variable is required '
-                  'and needs to contain the Azure blob connection string')
+    print(
+        "The environment variable AZ_BLOB_CONNECTION_STRING could not be verified, this variable is required "
+        "and needs to contain the Azure blob connection string"
+    )
     sys.exit(1)
 
 # Verify AZ_BLOB_CONTAINER env variable, this is the blob container value
 if not AZ_BLOB_CONTAINER:
-    print('The environment variable AZ_BLOB_CONTAINER could not be verified, this variable is required '
-                  'and needs to contain the value for Azure blob container')
+    print(
+        "The environment variable AZ_BLOB_CONTAINER could not be verified, this variable is required "
+        "and needs to contain the value for Azure blob container"
+    )
     sys.exit(1)
 
 # Create the BlobServiceClient object which will be used to create a container client
-blob_service_client = BlobServiceClient.from_connection_string(AZ_BLOB_CONNECTION_STRING)
+blob_service_client = BlobServiceClient.from_connection_string(
+    AZ_BLOB_CONNECTION_STRING
+)
 
 # Create the container
 container_client = blob_service_client.create_container(AZ_BLOB_CONTAINER)

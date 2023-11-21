@@ -37,8 +37,8 @@ SPLUNK_HOME = os.environ['SPLUNK_HOME']
 # append libs, handle if the app is running a standalone instance or clustered
 if os.path.exists(os.path.join(SPLUNK_HOME, 'etc', 'apps', 'TA-azure-blob-archiving', 'lib')):
     sys.path.append(os.path.join(SPLUNK_HOME, 'etc', 'apps', 'TA-azure-blob-archiving', 'lib'))
-elif os.path.exists(os.path.join(SPLUNK_HOME, 'etc', 'slave-apps', 'TA-azure-blob-archiving', 'lib')):
-    sys.path.append(os.path.join(SPLUNK_HOME, 'etc', 'slave-apps', 'TA-azure-blob-archiving', 'lib'))
+elif os.path.exists(os.path.join(SPLUNK_HOME, 'etc', 'peer-apps', 'TA-azure-blob-archiving', 'lib')):
+    sys.path.append(os.path.join(SPLUNK_HOME, 'etc', 'peer-apps', 'TA-azure-blob-archiving', 'lib'))
 
 # import Azure libs
 from azure.storage.blob import BlobClient, BlobServiceClient
@@ -73,9 +73,9 @@ else:
     TA_APP = SPLUNK_HOME + '/etc/apps/' + appname
 
 if is_windows:
-    TA_APP_CLUSTERED = SPLUNK_HOME + '\\etc\\slave-apps\\' + appname
+    TA_APP_CLUSTERED = SPLUNK_HOME + '\\etc\\peer-apps\\' + appname
 else:
-    TA_APP_CLUSTERED = SPLUNK_HOME + '/etc/slave-apps/' + appname
+    TA_APP_CLUSTERED = SPLUNK_HOME + '/etc/peer-apps/' + appname
 
 # Empty APP
 APP = ''
