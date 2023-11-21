@@ -1,6 +1,12 @@
 Release notes
 #############
 
+Version 1.1.1
+=============
+
+- Compatibility: Splunk 9.x Compatibility
+- Features: Importing all features from 1.1.0 which were not published
+
 Version 1.0.4
 =============
 
