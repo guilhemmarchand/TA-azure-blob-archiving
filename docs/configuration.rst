@@ -78,7 +78,7 @@ Splunk indexer(s) configuration
 
 ::
 
-    cd /opt/splunk/etc/master-apps
+    cd /opt/splunk/etc/manager-apps
     ls -ltrd TA-azure-blob-archiving
 
 **Create a local directory and copy default/azure2blob.conf:**
@@ -115,14 +115,14 @@ Splunk indexe(s) configuration to enable archiving
 ::
 
     [firewall_emea]
-    coldToFrozenScript = "$SPLUNK_HOME/etc/slave-apps/TA-azure-blob-archiving/bin/AzFrozen2Blob.sh"
+    coldToFrozenScript = "$SPLUNK_HOME/etc/peer-apps/TA-azure-blob-archiving/bin/AzFrozen2Blob.sh"
 
 *Splunk instances starting 8.0 can directly call the Python backend:*
 
 ::
 
     [firewall_emea]
-    coldToFrozenScript = "/usr/bin/python3" "$SPLUNK_HOME/etc/slave-apps/TA-azure-blob-archiving/bin/AzFrozen2Blob.py"
+    coldToFrozenScript = "/usr/bin/python3" "$SPLUNK_HOME/etc/peer-apps/TA-azure-blob-archiving/bin/AzFrozen2Blob.py"
 
 ``standalone indexers:``
 
@@ -142,7 +142,7 @@ Splunk indexe(s) configuration to enable archiving
 
 - If the system level Python3 interpreter is not available in ``/usr/bin/python3``, you can either change this location or create a symbolic link as a best practice
 - If you cannot define the symbolic link to ``/usr/bin/python3`` and you are running a Splunk version prior to Splunk 8.0, you will need to update the Python path in ``AzFrozen2Blob.sh`` (CAUTION: this is not upgrade resilient! A much better practice is to fix the OS)
-- If you are configuring a standalone indexer, change ``slave-apps`` to ``apps``
+- If you are configuring a standalone indexer, change ``peer-apps`` to ``apps``
 - Repeat this operation for every index you need aarchiving to be enabled
 
 Splunk Search Head(s) configuration

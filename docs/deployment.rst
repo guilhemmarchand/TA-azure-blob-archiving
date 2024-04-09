@@ -109,7 +109,7 @@ Initial deployment
 
 - For SHC configurations (Search Head Cluster), extract the tgz content in the SHC deployer and publish the SHC bundle
 
-- For indexer in cluster deployment, extract the tgz content in the cluster master in master-apps and pubish the cluster bundle
+- For indexer in cluster deployment, extract the tgz content in the cluster master in manager-apps and pubish the cluster bundle
 
 Upgrades
 ========

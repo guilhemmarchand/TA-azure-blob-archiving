@@ -14,7 +14,7 @@ Manually testing archiving a bucket
 ::
 
     sudo su - Splunk
-    /opt/splunk/bin/splunk cmd /opt/splunk/etc/slave-apps/TA-azure-blob-archiving/bin/AzFrozen2Blob.sh /opt/splunk/var/lib/splunk/network/colddb/db_1601751202_1601751090_88
+    /opt/splunk/bin/splunk cmd /opt/splunk/etc/peer-apps/TA-azure-blob-archiving/bin/AzFrozen2Blob.sh /opt/splunk/var/lib/splunk/network/colddb/db_1601751202_1601751090_88
 
 *Example of results:*
 
