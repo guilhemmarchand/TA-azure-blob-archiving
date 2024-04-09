@@ -127,7 +127,7 @@ def get_app_id():
             version_data = json.load(f)
             logging.info("version_data=\"{}\"".format(version_data))
             appID = version_data['appID']
-            logging.info('**** app generation, appID=\"{}\" ****'.format(appID))
+            logging.info('**** TrackMe app generation, appID=\"{}\" ****'.format(appID))
 
     except Exception as e:
         logging.error("Failed to retrieve the appID, exception=\"{}\"".format(e))

@@ -19,7 +19,7 @@ Azure storage account connection string
 
 **Once you have a storage account, the next things you need to retrieve are the following information to configure the Add-on:**
 
-**You need to know the connection string for your user account, this information will be stored on the indexers in the configuration file local/azure2blob.conf:**
+**You need to know the connection string for your user account, this information will be stored on the indexers in the configuration file local/azure2blob_settings.conf:**
 
 ::
 
@@ -31,7 +31,7 @@ Azure storage account connection string
    :alt: az_storage_connection_string.png
    :align: center
 
-You can use any of the two connection strings provided by Azure, store this value as you will configure it in the local/azure2blob.conf file.
+You can use any of the two connection strings provided by Azure, store this value as you will configure it in the local/azure2blob_settings.conf file.
 
 Azure storage blob container
 ----------------------------
@@ -81,14 +81,14 @@ Splunk indexer(s) configuration
     cd /opt/splunk/etc/manager-apps
     ls -ltrd TA-azure-blob-archiving
 
-**Create a local directory and copy default/azure2blob.conf:**
+**Create a local directory and copy default/azure2blob_settings.conf:**
 
 ::
 
     mkdir TA-azure-blob-archiving/local
-    cp -p TA-azure-blob-archiving/default/azure2blob.conf TA-azure-blob-archiving/local/
+    cp -p TA-azure-blob-archiving/default/azure2blob_settings.conf TA-azure-blob-archiving/local/
 
-**Edit the file TA-azure-blob-archiving/local/azure2blob.conf and update the values according to your account and settings:**
+**Edit the file TA-azure-blob-archiving/local/azure2blob_settings.conf and update the values according to your account and settings:**
 
 ::
 
