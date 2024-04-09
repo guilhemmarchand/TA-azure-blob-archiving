@@ -24,7 +24,7 @@ Dependencies
 Search Head(s)
 --------------
 
-**The front-end part of the application relies on indexing the content of the Azure storage tables via the Splunk Add-on for Microsoft Cloud Services:**
+**The front-end part of the application essentially relies on indexing the content of the Azure storage tables via the Splunk Add-on for Microsoft Cloud Services:**
 
 - https://splunkbase.splunk.com/app/3110/
 - https://docs.splunk.com/Documentation/AddOns/released/MSCloudServices/Configureinputs4
@@ -32,6 +32,14 @@ Search Head(s)
 Search head(s) do not have direct interractions with Azure storage blob or tables, and do not need to satisfy any additional dependencies.
 
 In a distributed deployment content, you would most likely deploy the Splunk Add-on for Microsoft Services on a heavy forwarder layer that you use for data collection purposes.
+
+**There are also some interactions with the cosmosdb which require Azure SDK for Python, it needs to be installed on the Search Head(s) and within Splunk environment:**
+
+::
+
+    sudo su - splunk
+    /opt/splunk/bin/splunk cmd python -m pip install azure-storage-blob
+    /opt/splunk/bin/splunk cmd python -m pip install azure-cosmosdb-table
 
 Indexer(s)
 ----------

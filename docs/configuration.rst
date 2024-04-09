@@ -93,9 +93,11 @@ Splunk indexer(s) configuration
 ::
 
     [azure2blob]
-    AZ_BLOB_CONTAINER = splunk-cold2frozen-archives
     AZ_BLOB_CONNECTION_STRING = connection_string_to_the_blob_storage
+    AZ_BLOB_CONTAINER = splunk-cold2frozen-archives
     AZ_STORAGE_TABLE_NAME = splunkdb
+    AZ_BLOB_STRUCTURE = index_year_month_day
+    AZ_COMPRESS = 0
 
 **Finally, publish the cluster bundle, once the bundle is pushed the indexers are ready to start archiving to Azure blob storage.**
 
